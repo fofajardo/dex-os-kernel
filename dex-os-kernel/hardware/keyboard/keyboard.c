@@ -120,7 +120,6 @@ void  kbd_irq(void)
 	scan_code = inportb(0x60);
     c=set_scancode_to_ascii(scan_code,kb_current_set);
 
-
    if (c!=-1)
     {
     
@@ -218,7 +217,19 @@ static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat)
     	write_kbd(0x60, xlat ? 0x65 : 0x25);
     /* program desired scancode set */
     	write_kbd_await_ack(0xF0);
-    	write_kbd_await_ack(ss);
+    
+    /*Make sure keyboard supports set, if not we use the other one*/
+     	if (write_kbd_await_ack(ss) == -1)
+     	{
+            if (ss == 1) 
+                    ss = 3;
+                else
+                    ss = 1;       
+                    
+            write_kbd_await_ack(ss);
+        };
+        
+        kb_current_set = ss;
     /* we want all keys to return both a make code (when pressed)
     and a break code (when released -- scancode set 3 only) */
     	if(ss == 3)
@@ -309,7 +320,7 @@ static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
 /* 48 */0,	'>',	'?',	'l',	':',	'p',	'_',	KEY_F10,
 /* 50 */0,	0,	'"',	0,	'{',	'+',	KEY_F11,KEY_PRNT,
 /* 58 is right Ctrl; 59 is right Shift; 5F is Scroll Lock */
-/* 58 */0,	0,	0x0D,	'}',	'|',	0,	KEY_F12,0,
+/* 58 */0,	0,	'\n',	'}',	'|',	0,	KEY_F12,0,
 /* 60 */KEY_DN,	KEY_LFT,KEY_PAUSE,KEY_UP,KEY_DEL,KEY_END,0x08,	KEY_INS,
 /* 68 */0,	'1',	KEY_RT,	'4',	'7',	KEY_PGDN,KEY_HOME,KEY_PGUP,
 /* 76 is Num Lock */
@@ -332,7 +343,7 @@ static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
 /* 40 */0,	',',	'K',	'I',	'O',	'0',	'9',	KEY_F9,
 /* 48 */0,	'.',	'/',	'L',	';',	'P',	'-',	KEY_F10,
 /* 50 */0,	0,	'\'',	0,	'[',	'=',	KEY_F11,KEY_PRNT,
-/* 58 */0,	0,	0x0D,	']',	'\\',	0,	KEY_F12,0,
+/* 58 */0,	0,	'\n',	']',	'\\',	0,	KEY_F12,0,
 /* 60 */KEY_DN,	KEY_LFT,KEY_PAUSE,KEY_UP,KEY_DEL,KEY_END,0x08,	KEY_INS,
 /* 68 */0,	KEY_END,KEY_RT,	KEY_LFT,KEY_HOME,KEY_PGDN,KEY_HOME,KEY_PGUP,
 /* 70 */KEY_INS,KEY_DEL,KEY_DN,	'5',	KEY_RT,	KEY_UP,	0,	'/',
@@ -478,7 +489,16 @@ have on-off (toggle or XOR) action, instead of momentary action */
    		    if (temp == KEY_DEL) return SOFT_RESET;
    		    return temp+400;
         };	
-	
+        
+    if ( (kbd_status & KBD_META_ALT) && (kbd_status & KBD_META_CTRL) && code_set == 3 )
+        {
+      		if(code >= sizeof(shift_map3) / sizeof(shift_map3[0]))
+			return -1;
+   		    temp = shift_map3[code];
+   		    if (temp == KEY_DEL) return SOFT_RESET;
+   		    return temp+400;
+        };	
+		
 	
 	/*if(kbd_status & KBD_META_ALT)
 		return code+300;*/
@@ -546,13 +566,14 @@ have on-off (toggle or XOR) action, instead of momentary action */
 		}
 		else
 		{
-    		if(code >= sizeof(map) / sizeof(map3[0]))
+    		if(code >= sizeof(map3) / sizeof(map3[0]))
     			return -1;
     		temp = map3[code];
 		};
 		
 		if(temp == 0)
 			return -1;
+			
 		if(kbd_status & KBD_META_CAPS)
 		{
 			if(temp >= 'a' && temp <= 'z' && code_set == 1)
@@ -801,9 +822,10 @@ void init_keyboard()
 {
     int devid;
     devmgr_char_desc mykeyboard;
-    //initialize the keyboard interface
+    //initialize the keyboard interface according to the DEX 1.00 driver spec
     memset(&mykeyboard,0,sizeof(mykeyboard));
     mykeyboard.hdr.size = sizeof(mykeyboard);
+    
     //set the type of device
     mykeyboard.hdr.type = DEVMGR_CHAR;
     strcpy(mykeyboard.hdr.name,"keyb");
@@ -826,7 +848,7 @@ void init_keyboard()
     //assign the keyboard wrapper to IRQ 1
     irq_addhandler(devid,1,kbd_irq);
     
-    init_kbd(kb_current_set,3,0);
+    init_kbd(KB_CURRENTSET,3,0);
 
     hotkey_list = 0;
 };

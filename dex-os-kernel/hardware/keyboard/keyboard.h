@@ -8,7 +8,7 @@
 
 //The size of the keyboard bufer
 #define BUF_SIZE 256
-
+#define KB_CURRENTSET 3
 
 #define CAPS_LOCK 4
 #define NUM_LOCK 2
@@ -127,7 +127,8 @@ typedef struct _kb_hotkey_info {
 
 kb_hotkey_info *hotkey_list = 0;
 int kb_totalhotkeys = 0;
-int kb_current_set = 1;
+
+int kb_current_set = KB_CURRENTSET;
 
 sync_sharedvar kb_busywait;
 

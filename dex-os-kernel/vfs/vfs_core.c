@@ -1818,6 +1818,9 @@ int chdir(const char *name)
     {
         if (fileptr->attb&FILE_DIRECTORY)
         {
+                
+            
+                
             current_process->workdir=fileptr;
             return 1;   //success
         }

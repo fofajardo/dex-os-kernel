@@ -285,7 +285,7 @@ void dex32_startup()
     
     /* initialize the malloc server, place the device name of the malloc
        function you wish to use as the paramater*/
-    alloc_init("bsdmalloc"); 
+    alloc_init("bsd_malloc"); 
     
     //register the hardware ports manager
     printf("dex32_startup(): Initializing ports\n");

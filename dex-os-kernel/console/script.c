@@ -24,6 +24,8 @@
     
 */
 
+/*Defines the maximum number of levels the script interpreter can
+  be invoked*/
 #define SCRIPT_MAXINSTANCE 20
 
 
@@ -69,7 +71,11 @@ int script_load(const char *filename)
             /*determine if the line will be printed to the screen
              or not. Dtermined by the @ at the start or an echo off command*/
             if (linebuffer[0]!='@' && echo_command)
-            printf("%s\n",linebuffer);  
+            {
+                textcolor(LIGHTGRAY);
+                printf("%s\n",linebuffer);  
+                textcolor(WHITE);
+            }
               else
             if (linebuffer[0]=='@')
             linebuffer[0]=' ';     
