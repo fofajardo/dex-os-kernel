@@ -39,6 +39,7 @@
 
 //Unknown device
 #define DEVMGR_UNKNOWN 0
+
 //filesystem drivers
 #define DEVMGR_FS  1
 
@@ -77,6 +78,9 @@
 
 //A PCI bus driver
 #define DEVMGR_PCI 13
+
+//A System call table manager
+#define DEVMGR_SYSCALL 14
 
 //process scheduler interface
 #define DEVMGR_SCHEDULER_EXTENSION 0x1000
@@ -297,6 +301,25 @@ typedef struct _devmgr_char_desc {
     void *(*get_callback_handler)(int event);//returns the address of the fxn for the event
 } devmgr_char_desc;
 
+/*Added May 16 2004 - Joseph Emmanuel DL Dayo
+ *Added to allow device drivers to define their own system calls. The
+ *default syscall manager (dexapi.c) fills this structure up and registers
+ *itself as a driver using this structure.
+ */
+typedef struct _devmgr_syscallmgr {
+    devmgr_generic hdr;
+    
+    int (*api_addsystemcall)(DWORD function_number, void *function_ptr, 
+                        DWORD access_check, DWORD flags);
+                        
+    void (*api_getsystemcall)(DWORD function_number);
+    
+    int (*api_removesystemcall)(DWORD function_number);
+    
+    DWORD (*api_syscall)(DWORD fxn,DWORD val,DWORD val2,
+                                DWORD val3,DWORD val4,DWORD val5);
+    
+} devmgr_syscallmgr;
 
 
 extern devmgr_generic **devmgr_devlist;         //points to the list of devices

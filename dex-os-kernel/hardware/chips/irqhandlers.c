@@ -28,7 +28,8 @@
 #define IRQ_KEYBOARD 2
 #define IRQ_FDC 64
 
-typedef struct _idtr {
+typedef struct _idtr 
+{
       WORD limit;
       idtentry *location;
 }     idtr;
@@ -463,7 +464,7 @@ void setdefaulthandlers()
    setinterruptvector(0x31,dex_idtbase,0x8E,
    syscallwrapper,SYS_CODE_SEL);
 
-   intloc.limit=2047;
+   intloc.limit = 2047;
    intloc.location=dex_idtbase;
    loadregisters();     //load the idtr register with data
 };

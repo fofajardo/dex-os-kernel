@@ -92,7 +92,7 @@ kernel_sysinfo kernel_systeminfo;
 //This stores the current virtual console the kernel will use
 DEX32_DDL_INFO *consoleDDL;
 char *dex32_versionstring="DEX Extensible Operating System, project \"Chameleon\" \
-\nVersion 1.033 build April 9 2004\n \
+\nVersion 1.034 build April 9 2004\n \
 Copyright (C) 2004  Joseph Emmanuel DL Dayo\n \
 Developed as a requirement for CMSC 190 at the Institute of Computer Science\n \
 University of the Philippines, Los Baños.\n\n \
@@ -161,6 +161,7 @@ fg_processinfo *fg_kernel = 0;
   ORDER is important when starting up the kernel modules!!*/
 
 multiboot_header *mbhdr = 0;
+char *startup_parameters = 0;
 
 void main()
 {
@@ -170,7 +171,7 @@ void main()
     /*obtain the multiboot information structure from GRUB which contains info about memory
       and the device that booted this kernel*/
     mbhdr =(multiboot_header*)multiboothdr;
-    
+    startup_parameters = (char*)mbhdr->cmdline;
     /* Enable the keyboard IRQ,Timer IRQ and the Floppy Disk IRQ.As more devices that uses IRQs get
        supported, we should OR more of them here*/
     program8259(IRQ_TIMER | IRQ_KEYBOARD | IRQ_FDC); 
@@ -249,10 +250,10 @@ void dex32_startup()
     textcolor(YELLOW);
     printf("DEX");
     textcolor(WHITE);
-    printf("%-76s\n"," Extensible Operating System v.1.033 Beta project \"Chameleon\"");
+    printf("%-76s\n"," Extensible Operating System v.1.034 Beta project \"Chameleon\"");
     textcolor(WHITE);
     textbackground(BLACK);
-    printf("BUILD April 9 2004\n");
+    printf("BUILD May 16 2004\n");
     textbackground(BLACK);
     printf("This program is free software; you can redistribute it and/or modify\n");
     printf("it under the terms of the GNU General Public License\n");

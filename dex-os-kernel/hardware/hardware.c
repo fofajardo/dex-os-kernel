@@ -66,7 +66,7 @@ void hardware_printinfo(hardware_cpuinfo *cpuinfo)
     if ( f & CPUFEATURE_SSE && !isAMDcpu) printf("* Intel SSE\n");
     if ( f & CPUFEATURE_SSE && isAMDcpu) printf("* AMD 3Dnow Professional (SSE)\n");
     if ( f & CPUFEATURE_SSE2) printf("* Intel SSE2\n");
-    if ( f & CPUFEATURE_SNOOP) printf("* Slef-Snoop\n");
+    if ( f & CPUFEATURE_SNOOP) printf("* Self-Snoop\n");
     if ( f & CPUFEATURE_ACC && !isAMDcpu) printf("* Thermal Interrupt & Status MSRs.\n");
     if ( f & CPUFEATURE_IA64 && !isAMDcpu) printf("* Intel IA64\n");
     if ( f & CPUFEATURE_3DNOW && isAMDcpu) printf("* AMD 3Dnow!\n");

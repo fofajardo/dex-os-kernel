@@ -28,21 +28,13 @@ although a user procedure call is in the works
 //5 parameters per call with a single DWORD return value
 //this function is called using interrupt 0x30 by user-mode
 //applications
-#define API_MAXSYSCALLS 0x100
-
-#define API_REQUIRE_INTS 0x1
-typedef struct _api_systemcall 
-{
-    DWORD access_check;
-    int flags;
-    void *function_ptr;
-} api_systemcall;
 
 
 api_systemcall api_syscalltable[API_MAXSYSCALLS];
 
 int dex32_getversion() {return DEX32_OSVER;};
 
+/*Adds a system call*/
 int api_addsystemcall(DWORD function_number, void *function_ptr, 
                         DWORD access_check, DWORD flags)
 {
@@ -60,6 +52,18 @@ int api_addsystemcall(DWORD function_number, void *function_ptr,
     return -1;
 };
 
+/* Returns information about a particular systemcall*/
+void *api_getsystemcall(DWORD function_number)
+{
+   if (function_number < API_MAXSYSCALLS)
+    {
+        return (void*)&api_syscalltable[function_number];
+    };
+    return -1;
+};
+
+/*Removes a systemcall from the system call table by zeroing its
+  pointers*/
 int api_removesystemcall(DWORD function_number)
 {
     if (function_number < API_MAXSYSCALLS)
@@ -79,7 +83,8 @@ int api_removesystemcall(DWORD function_number)
 void api_init()
 {
  int i;
-
+ devmgr_syscallmgr me;
+ 
 /******************************Initialize the syscall table********************/ 
  for (i=0; i<API_MAXSYSCALLS ;i++)
      {
@@ -87,7 +92,16 @@ void api_init()
                  api_syscalltable[i].function_ptr = 0;
      };
      
-/************* Add the functions that could be used by user applications*******/
+/************* Add the functions that could be used by user applications, if you 
+want to customize DEX-OS feel free to add systemcalls number 0x10000000 up to
+0xF0000000. System Calls below 0x10000000 are reserved. By default interrupts are
+disabled when an interrupt is called, use the API_REQUIRE_INTS flag to enable
+interrupts when this system call is invoked. 
+
+*note: The access_check parameter which is  intended to allow DEX to check if the 
+pointers passed are valid is not yet
+implemented.
+*******/
      api_addsystemcall(0, dex32_getversion,0,0);
      api_addsystemcall(1, kb_dequeue,0,0);
      api_addsystemcall(2, getprocessid,0,0);
@@ -116,11 +130,10 @@ void api_init()
      api_addsystemcall(0x1a,getparentid,0,0);
      api_addsystemcall(0x1b,findprocessname,0,0);
      api_addsystemcall(0x1c,loadDLL,0,0);
-     
      api_addsystemcall(30,module_getfxn,0,0);
      api_addsystemcall(31,ps_seterror,0,0);
      api_addsystemcall(32,ps_geterror,0,0);
-     /*syscall # 33 free for use*/
+     api_addsystemcall(33,getch,0,API_REQUIRE_INTS);
      api_addsystemcall(34,time_getmycputime,0,0);
      api_addsystemcall(35,vfs_setbuffer,0,0);
      api_addsystemcall(36,vfs_getstat,0,0);
@@ -192,6 +205,23 @@ void api_init()
      api_addsystemcall(0x99,vfs_mount_device,0,API_REQUIRE_INTS);
      api_addsystemcall(0x9A,vfs_unmount_device,0,API_REQUIRE_INTS);
      api_addsystemcall(0x9B,devmgr_sendmessage,0,0);
+     
+     
+     /****************Register myself to the device manager**********/
+     strcpy(me.hdr.name,"syscallmgr");
+     strcpy(me.hdr.description,"DEX default System call manager");
+     me.hdr.size= sizeof(devmgr_syscallmgr);
+     me.hdr.type = DEVMGR_SYSCALL;
+     
+     //Define the public functions
+     me.api_syscall = (void*)api_syscall;
+     me.api_addsystemcall = (void*)api_addsystemcall;
+     me.api_removesystemcall = (void*)api_removesystemcall;
+     me.api_getsystemcall = (void*) api_getsystemcall;
+     
+     
+     devmgr_register((devmgr_generic*)&me); //Register to the device manager
+     
 };
 
 

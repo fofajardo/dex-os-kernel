@@ -231,6 +231,9 @@ char *devmgr_identify(int type,char *buf)
             if (type == DEVMGR_CHAR)
                         strcpy(buf,"character device");
                         else
+            if (type == DEVMGR_SYSCALL)
+                        strcpy(buf,"System call manager");
+                        else
             if (type >= 1000)
             				strcpy(buf,"Kernel Extension");
                         else

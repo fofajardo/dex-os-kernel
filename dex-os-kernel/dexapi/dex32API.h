@@ -22,11 +22,25 @@ although a user procedure call is in the works
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 ********************************************************************/
 
+#define API_MAXSYSCALLS 0x100
+
+#define API_REQUIRE_INTS 0x1
+
+typedef struct _api_systemcall 
+{
+    DWORD access_check;
+    int flags;
+    void *function_ptr;
+} api_systemcall;
+
 
 
 int api_addsystemcall(DWORD function_number, void *function_ptr, 
                         DWORD access_check, DWORD flags);
+                        
 void api_init();
+
+void *api_getsystemcall(DWORD function_number);
 int api_removesystemcall(DWORD function_number);
 DWORD api_syscall(DWORD fxn,DWORD val,DWORD val2,
                    DWORD val3,DWORD val4,DWORD val5);
