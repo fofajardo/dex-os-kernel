@@ -236,7 +236,7 @@ static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat)
     /*Make sure keyboard supports this set, if not we use the other one*/
      	if (write_kbd_await_ack(ss) == -1)
      	{
-            if (ss == 1) 
+            if (ss == 2) 
                     ss = 3;
                 else
                     ss = 1;       
@@ -665,38 +665,42 @@ char getch()
  {
    unsigned int code,c;
    
-   /***** Send to the scheduler, if it supports it, 
-    that this process is to be sent to the io-queue, this is
-    quite hackish though***/
-   devmgr_scheduler_extension *cursched = 
-        (devmgr_scheduler_extension*)extension_table[CURRENT_SCHEDULER].iface; 
-        
-   devmgr_sendmessage(cursched->hdr.id,2,current_process->processid);
+  
 
            
    do
    {
     keyboard_wait();
     c=deq(&_q,&code);
-    
-    if (getprocessid() != fg_getkeyboardowner())
-        devmgr_sendmessage(cursched->hdr.id,2,current_process->processid);
-    else
-    	devmgr_sendmessage(cursched->hdr.id,3,current_process->processid);	
     	
    }
    while (c==-1);
-  
-   devmgr_sendmessage(cursched->hdr.id,3,current_process->processid);
    
    return ((char)code);
  };
 
 void keyboard_wait()
 {
+    
+   devmgr_scheduler_extension *cursched = 
+        (devmgr_scheduler_extension*)extension_table[CURRENT_SCHEDULER].iface; 
+        
+
+    
+    
   if (fg_current)  
   while ( getprocessid() != fg_getkeyboardowner())
     {
+        
+   /***** Send to the scheduler, if it supports it, 
+    that this process is to be sent to the io-queue, this is
+    quite hackish though***/
+        
+    if (getprocessid() != fg_getkeyboardowner())
+        devmgr_sendmessage(cursched->hdr.id,2,current_process->processid);
+    else
+    	devmgr_sendmessage(cursched->hdr.id,3,current_process->processid);
+     	   
      //we may probably allow child threads to share the keyoard with its parent
      if ( (current_process->status & PS_ATTB_THREAD) 
            && current_process->accesslevel!=ACCESS_SYS

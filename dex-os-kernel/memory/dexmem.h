@@ -145,6 +145,7 @@ void clearpagetable(DWORD *pagetable);
 void *commit(DWORD virtualaddr,DWORD pages);
 void *commitb(DWORD virtualaddr,int amt,DWORD *pagecount);
 DWORD mem_detectmemory(mmap *grub_meminfo , int size );
+void mem_interpretmemory(mmap *map,int size);
 void dex32copyblock(DWORD vdest,DWORD vsource,DWORD pages,DWORD *pagedir);
 void *dex32_commitblock(DWORD virtualaddr,int amt,
     DWORD *pagecount,DWORD *pagedir,DWORD attb);
@@ -158,7 +159,11 @@ DWORD dex32_getfreepages();
 void *dex32_reserveblock(DWORD virtualaddr,int amt,
     DWORD *pagecount,DWORD *pagedir,DWORD attb);
 void *dex32_reserve(DWORD virtualaddr,DWORD pages,DWORD *pagedir,DWORD attb);
+void dex32_restoreints(DWORD flags);
 void *dex32_sbrk(unsigned int amt);
+void *dex32_setpageattbblock(DWORD virtualaddr,int amt,
+						    	DWORD *pagecount,DWORD *pagedir,DWORD attb);
+void dex32_stopints(DWORD *flags);
 void freelinearloc(void *linearmemory,DWORD *pagedir);
 void freemultiple(void *linearmemory,DWORD *pagedir,DWORD pages);
 void freeuserheap(DWORD *pagedir);

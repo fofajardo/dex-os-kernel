@@ -24,18 +24,18 @@ void *malloc(unsigned int size)
     if (auxillary_malloc_base == 0)
     {
      
-        val = dlmalloc(size);
+        val = (DWORD)dlmalloc(size);
  
     }
     else
     {
         dev_malloc = (devmgr_malloc_extension*)extension_table[CURRENT_MALLOC].iface;
-        val = bridges_call(dev_malloc,&dev_malloc->malloc,size);
+        val = bridges_call((devmgr_generic*)dev_malloc,(void**)&dev_malloc->malloc,size);
     };   
 
     restoreflags(flags);
     
-    return val;
+    return (void*)val;
 };
 
 /*This functions serves as a brdige to the realloc function, it picks the current
@@ -51,9 +51,9 @@ void *realloc(void *ptr,unsigned int size)
       
     //Use the default realloc function if there is no other malloc functio available    
     if (auxillary_malloc_base == 0)
-        val = dlrealloc(ptr,size);
+        val = (DWORD)dlrealloc(ptr,size);
     else
-    if (ptr < auxillary_malloc_base)
+    if (ptr < (void*)auxillary_malloc_base)
     {
         void *memptr;
     /* The old realloc was called when there is another malloc module installed.
@@ -66,7 +66,7 @@ void *realloc(void *ptr,unsigned int size)
 
         
         dev_malloc = (devmgr_malloc_extension*)extension_table[CURRENT_MALLOC].iface;
-        memptr = (void*) bridges_call(dev_malloc,&dev_malloc->malloc,size);
+        memptr = (void*) bridges_call((devmgr_generic*)dev_malloc,(void**)&dev_malloc->malloc,size);
         memcpy(memptr, ptr, size);
         
         //use the old free
@@ -75,11 +75,11 @@ void *realloc(void *ptr,unsigned int size)
     else
     {
         dev_malloc = (devmgr_malloc_extension*)extension_table[CURRENT_MALLOC].iface;
-        val = bridges_call(dev_malloc,&dev_malloc->realloc,ptr,size);
+        val = (DWORD) bridges_call((devmgr_generic*)dev_malloc,(void**)&dev_malloc->realloc,ptr,size);
     };    
     
     restoreflags(flags);
-    return val;
+    return (void*)val;
 };
 
 /*This functions serves as a brdige to the free function, it picks the current
@@ -101,7 +101,7 @@ void free(void *ptr)
     else
     {
         dev_malloc = (devmgr_malloc_extension*)extension_table[CURRENT_MALLOC].iface;
-        bridges_call(dev_malloc,&dev_malloc->free,ptr);
+        bridges_call((devmgr_generic*)dev_malloc,(void**)&dev_malloc->free,ptr);
     };    
     
     restoreflags(flags);

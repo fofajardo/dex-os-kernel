@@ -67,7 +67,7 @@ for (i=0;i < size / sizeof(mmap) ; i++)
        {
                     for (i2 = base; i2 < base_end; i2 += 0x1000)
                        {
-                          if ((stackbase + 0x100000) < i2 )
+                          if (((DWORD)stackbase + 0x100000) < i2 )
                              {
                              stackbase[0]++;
                              stackbase[stackbase[0]]=i2;
@@ -97,7 +97,7 @@ void mempush(DWORD mem)
 {
 //make sure that the physcial memory location pushed is within
 //the range of the computer's physical memory
-if (stackbase+0x100000>=mem<memamount-0x1000)
+if ( ((DWORD)stackbase + 0x100000 >= mem) && (mem < memamount-0x1000) )
    {
     stackbase[0]++;
     stackbase[stackbase[0]]=mem;
@@ -185,7 +185,7 @@ int maplineartophysical2(unsigned int *pagedir, /*the location of the page direc
                 
                 pagetable=(DWORD*)SYS_PAGEDIR4_VIR;
 
-                tlb_address = pagetable;
+                tlb_address = (DWORD)pagetable;
                 invtlb();                
 				/*clear the locations of the page table to zero*/
 				memset(pagetable,0,4096);
@@ -370,7 +370,7 @@ void freelinearloc(void *linearmemory,DWORD *pagedir)  //ATOMIC function
 
      dex32_stopints(&flags);
     // disablepaging();
-     address = getphys(linearmemory,pagedir);
+     address = getphys((DWORD)linearmemory,pagedir);
     /* pagetbl=(DWORD*)(pagedir[dirindex]&0xFFFFF000);
      address=pagetbl[pageindex];*/
      if (address&1)
@@ -444,7 +444,7 @@ void setpageattb(DWORD *pagedir,DWORD vaddr,DWORD attb)
     phys=getphys(vaddr,pagedir);
     pg=(DWORD)getvirtaddress((DWORD)pagedir);
 
-    maplineartophysical2(pg,vaddr,
+    maplineartophysical2((DWORD*)pg,vaddr,
     phys,attb);
           //   printf("ok\n");
 
@@ -609,7 +609,7 @@ void *commit(DWORD virtualaddr,DWORD pages)
           };
           
           //out of memory error
-          if (pageadr == -1) {ret = -1;break;};
+          if (pageadr == -1) {ret = (void*) -1; break;};
           
           maplineartophysical2((DWORD*)SYS_PAGEDIR_VIR,virtualaddr,pageadr,PG_PRESENT);
           maplineartophysical2((DWORD*)SYS_KERPDIR_VIR,virtualaddr,pageadr,PG_PRESENT);
@@ -642,7 +642,7 @@ void *sbrk(int amt)
      char *ret=0;
      
      //cannot handle negative values as of the moment
-     if (amt<0) return -1;
+     if (amt<0) return (void*)-1;
      
      //return location of break
      if (amt==0) return knext-1;
@@ -733,8 +733,8 @@ int dex32_copy_pg(DWORD *destdir, DWORD *source)
                   DWORD *destpagetable,*srcpagetable;
                   destdir[i]= (DWORD)mempop() | 1 | PG_USER | PG_WR;
 
-                  destpagetable= (DWORD)destdir[i]&0xFFFFF000;
-                  srcpagetable = (DWORD)source[i]&0xFFFFF000;
+                  destpagetable= (DWORD*)(destdir[i]&0xFFFFF000);
+                  srcpagetable = (DWORD*)(source[i]&0xFFFFF000);
 
                   for (i2= 0 ;i2 < 1024; i2++)
                   {
@@ -749,11 +749,13 @@ int dex32_copy_pg(DWORD *destdir, DWORD *source)
 
                               if (i>=syscallstart&&i<syscallend)
                                   {
-                                        memcpy(destpagetable[i2]&0xFFFFF000,srcpagetable[i2]&0xFFFFF000,0x1000);
+                                        memcpy((void*)(destpagetable[i2]&0xFFFFF000),
+                                        	   (void*)(srcpagetable[i2]&0xFFFFF000),0x1000);
                                   }
                                     else
                                   {
-                                  		memcpy(destpagetable[i2]&0xFFFFF000,srcpagetable[i2]&0xFFFFF000,0x1000);
+                                  		memcpy((void*)(destpagetable[i2]&0xFFFFF000),
+                                               (void*)(srcpagetable[i2]&0xFFFFF000),0x1000);
                                         destpagetable[i2]= destpagetable[i2] | PG_WR | PG_USER;
                                   };
                       }
@@ -892,8 +894,8 @@ void dex32copyblock(DWORD vdest,DWORD vsource,DWORD pages,DWORD *pagedir)
      int i;
      for (i=0;i<pages;i++)
           {
-           DWORD pdest=getphys(vdest,pagedir);
-           DWORD pg=(DWORD*)getvirtaddress((DWORD)pdest);
+           DWORD pdest = getphys(vdest,pagedir);
+           DWORD pg = (DWORD)getvirtaddress((DWORD)pdest);
            memcpy((void*)pg,(void*)vsource,0x1000);
            vdest+=0x1000;
            vsource+=0x1000;
@@ -917,7 +919,7 @@ void mem_init()
     for (i=0x100000;i<0x300000;i+=0x1000)
         maplineartophysical((DWORD*)pagedir1,i,i        /*,stackbase*/,1);
     
-    maplineartophysical((DWORD*)pagedir1,stackbase - 0x1000,0,0);
+    maplineartophysical((DWORD*)pagedir1,(DWORD)(stackbase - 0x1000) ,0,0);
     
     maplineartophysical((DWORD*)pagedir1,(DWORD)SYS_PAGEDIR_VIR,(DWORD)pagedir1    /*,stackbase*/,1);
     maplineartophysical((DWORD*)pagedir1,(DWORD)SYS_PAGEDIR2_VIR,
@@ -946,9 +948,9 @@ memory_manager.hdr.type = DEVMGR_MEM;
    functions will be visible to other modules that use the mem_mgr interface*/
    
 memory_manager.sbrk = sbrk;
-memory_manager.mem_map = maplineartophysical2;
-memory_manager.commit = commit;
-memory_manager.freemultiple = freemultiple;
+memory_manager.mem_map = (void*) maplineartophysical2;
+memory_manager.commit = (void*) commit;
+memory_manager.freemultiple = (void*) freemultiple;
 
 /*register myself to the device manager*/
 devmgr_register( (devmgr_generic*) &memory_manager );

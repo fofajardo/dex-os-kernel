@@ -31,7 +31,7 @@ void *dex_malloc(size_t size)
         
         if (first_block == 0 || mem_nextptr == 0)
             {
-                DWORD memloc= sbrk(0x100000);
+                DWORD memloc= (DWORD)sbrk(0x100000);
                 first_block = (mem_malloc*) memloc;
                 mem_nextptr = memloc+ ( (page+DEXMALLOC_SPACE) * 0x1000 );
                 commit(memloc, page);       
@@ -56,8 +56,8 @@ void *dex_malloc(size_t size)
                    };
             };        
         
-        last_block->next = mem_nextptr;
-        ptr = mem_nextptr;
+        last_block->next = (mem_malloc*) mem_nextptr;
+        ptr = (mem_malloc*) mem_nextptr;
         
         commit((DWORD) mem_nextptr,page);
         mem_nextptr+= (page+DEXMALLOC_SPACE) * 0x1000;
@@ -117,11 +117,11 @@ mymalloc.hdr.size = sizeof(devmgr_malloc_extension);
 mymalloc.hdr.type = DEVMGR_MALLOC_EXTENSION;
 strcpy(mymalloc.hdr.name,"dex_malloc");
 strcpy(mymalloc.hdr.description,"malloc for debugging");
-mymalloc.malloc  = dex_malloc;
+mymalloc.malloc  = (void*) dex_malloc;
 mymalloc.realloc = 0;
 mymalloc.free    = dex_free;
-mymalloc.hdr.sendmessage= dexmalloc_sendmessage;
-mydevid = devmgr_register(&mymalloc);
+mymalloc.hdr.sendmessage = (void*) dexmalloc_sendmessage;
+mydevid = devmgr_register( (devmgr_generic*) &mymalloc);
 
 };
 

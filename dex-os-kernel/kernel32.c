@@ -192,7 +192,7 @@ void main()
      kernel_systeminfo.part[2] =    (mbhdr->boot_device & 0xFF);
         
      //obtain information about the memory configuration
-     memory_map = mbhdr->mmap_addr;
+     memory_map = (mmap*) mbhdr->mmap_addr;
      map_length = mbhdr->mmap_length;
         
      /*
@@ -232,7 +232,7 @@ void main()
     //Create a virtual console that the kernel will send its output to
     consoleDDL=Dex32CreateDDL();
     fg_kernel = fg_register(consoleDDL,0);
-    fg_setforeground(fg_kernel);
+    fg_setforeground(fg_kernel->id);
     
     /* Preliminary initializaation complete, start up the operating system*/
     dex32_startup(); 
@@ -339,7 +339,7 @@ void dex_kernel32()
     //add some hotkeys to the keyboard
     kb_addhotkey(KEY_F6+CTRL_ALT, 0xFF, fg_next);
     kb_addhotkey(KEY_F5+CTRL_ALT, 0xFF, fg_prev);
-    kb_addhotkey('\t', KBD_META_ALT, fg_toggle);
+    kb_addhotkey('\t', KBD_META_ALT, (void*)fg_toggle);
     
     keyboardflush();
     

@@ -24,5 +24,5 @@ void vmm_init()
     me.vmm_pagein = vmm_pagein;
 
     devmgr_register((devmgr_generic*) &me);
-    extension_override(&me,0);
+    extension_override((devmgr_generic*)&me,0);
 };
