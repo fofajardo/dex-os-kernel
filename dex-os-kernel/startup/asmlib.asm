@@ -8,7 +8,7 @@
 SECTION .data
 global _CsrX
 global _CsrY
-
+global _idtr_x
 
 _CsrX:
 CsrX:	db 0
@@ -20,8 +20,9 @@ global _attb
 _attb:
 attb:   db 0
 
-idtr:   dw 2047     ;idt limit
-        dd 0x2000   
+_idtr_x:
+idtr_x:   dw 2047     ;idt limit
+          dd 0x2000   
 
 
 testvalue dd 0xFAFAFAFA
@@ -574,7 +575,7 @@ mempop:
 global _loadregisters
 
 _loadregisters:
-lidt [idtr]  ;load em'
+    lidt [idtr_x]  ;load em'
 ret
 
 

@@ -29,8 +29,6 @@
 #define USE_CONSOLEDDL
 
 
-
-
 //timer set to switch to new task 100 times per second. (see time.h or time.c)
 int context_switch_rate = 100; 
 char *scr_debug = (char*)0xb8000;
@@ -163,6 +161,7 @@ fg_processinfo *fg_kernel = 0;
 multiboot_header *mbhdr = 0;
 char *startup_parameters = 0;
 
+
 void main()
 {
 
@@ -171,7 +170,10 @@ void main()
     /*obtain the multiboot information structure from GRUB which contains info about memory
       and the device that booted this kernel*/
     mbhdr =(multiboot_header*)multiboothdr;
+    
+    /*obtain the parameters passed from GRUB*/
     startup_parameters = (char*)mbhdr->cmdline;
+    
     /* Enable the keyboard IRQ,Timer IRQ and the Floppy Disk IRQ.As more devices that uses IRQs get
        supported, we should OR more of them here*/
     program8259(IRQ_TIMER | IRQ_KEYBOARD | IRQ_FDC); 
@@ -263,7 +265,7 @@ void dex32_startup()
     /*show parameter information sent by the multiboot compliant bootloader.*/
     printf("dex32_startup(): Bootloader name : %s\n", mbhdr->boot_loader_name);
     printf("dex32_startup(): Memory size: %d KB\n",memamount/1024);
-
+    printf("dex32_startup(): Parameters: %s\n",startup_parameters);
     //Initialize the extension manager
     printf("dex32_startup(): Initializing the extension manager..\n");
     extension_init();

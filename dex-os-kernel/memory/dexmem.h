@@ -114,9 +114,9 @@ char *syscallstack=   (char*)0x90000000;    //marks the base of the system call 
 char *linux_userspace=(char*)0x80000000;    //marks the base where linux executables like to go
 char *sharedmemloc=   (char*)0x70000000;    //marks the location of the user shared memory area
 char *userspace=      (char*)0x00400000;    //marks the location of the user base address
-DWORD *stackbase=    (DWORD*)0x00201000;    //marks the location of the stack pages
+DWORD *stackbase=    (DWORD*)0x00210000;    //marks the location of the stack pages
 DWORD *kernelbase=   (DWORD*)0x00100000;    //marks the location of the kernel
-idtentry *dex_idtbase=(idtentry*)0x2000;    //marks the location of the IDT
+idtentry *dex_idtbase=(idtentry*)0x00200000;    //marks the location of the IDT
 gdtentry *dex_gdtbase=(gdtentry*)0x1000;    //marks the location of the GDT
 /*=================================================================================*/
 

@@ -28,7 +28,7 @@
 #define IRQ_KEYBOARD 2
 #define IRQ_FDC 64
 
-typedef struct _idtr 
+typedef struct __attribute__((packed)) _idtr 
 {
       WORD limit;
       idtentry *location;
@@ -73,12 +73,11 @@ extern void irq5wrapper(void);
 extern void irq6wrapper(void);
 extern void irq7wrapper(void);
 extern void irq8wrapper(void);
+extern idtr idtr_x;
 
 //functions for setting and getting the CR0 register*/
 extern DWORD getCR0();
 extern DWORD setCR0(DWORD);
-
-idtr intloc;
 
 /*program8259 is the main function used for programming
   the 8259 controller. The 8259 controller is responsible
@@ -464,8 +463,8 @@ void setdefaulthandlers()
    setinterruptvector(0x31,dex_idtbase,0x8E,
    syscallwrapper,SYS_CODE_SEL);
 
-   intloc.limit = 2047;
-   intloc.location=dex_idtbase;
+   idtr_x.limit = 2047;
+   idtr_x.location=dex_idtbase;
    loadregisters();     //load the idtr register with data
 };
 

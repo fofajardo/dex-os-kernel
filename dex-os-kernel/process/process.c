@@ -1236,7 +1236,7 @@ void show_process()
     char levelstr[13];
         
     textbackground(BLUE);
-    printf("dex32_scheduler  v1.00\n");
+    printf("Scheduler [%s]\n", extension_getname(CURRENT_SCHEDULER) );
     textbackground(BLACK);
     printf("Processes in memory:\n\n");
     textcolor(MAGENTA);
@@ -1277,7 +1277,7 @@ void show_process()
         else
             textcolor(GREEN);
             
-        printf(" %-17s",ptr[i].name);
+        printf("%-17s",ptr[i].name);
         textcolor(WHITE);
         strcpy(levelstr,"?");
 
@@ -1295,6 +1295,7 @@ void show_process()
         sync_entercrit(&processmgr_busy);
         
         ps = ps_findprocess(ptr[i].processid);
+        
         if (ps!=-1)
         {
         ps->lastcputime = ptr[i].totalcputime;

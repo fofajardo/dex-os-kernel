@@ -42,3 +42,11 @@ devmgr_generic *iface;
 int extension_busy = 0 ,extension_ps_ready = 0;
 
 extension_info *extension_table = 0;
+
+/*********Function Prototypes*******************/
+int extension_checkmodule(int deviceid);
+char *extension_getname(int id);
+void extension_init();
+int extension_list();
+int extension_override(devmgr_generic *ext,devmgr_generic **prev);
+

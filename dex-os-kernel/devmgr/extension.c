@@ -35,7 +35,13 @@ void extension_init()
    memset(extension_table,0,extension_table_size);
 };
 
-
+char *extension_getname(int id)
+{
+    if (extension_table[id].iface!=0)
+    return extension_table[id].iface->name;
+    
+    return 0;
+};    
 
 /*Override a module in memory and replace its interface with the interface
   of ext, the pointer to the previous interface is returned in prev*/

@@ -82,6 +82,7 @@
 //A System call table manager
 #define DEVMGR_SYSCALL 14
 
+/**************** Types ranging from 0x1000 above are extension modules***********/
 //process scheduler interface
 #define DEVMGR_SCHEDULER_EXTENSION 0x1000
 
