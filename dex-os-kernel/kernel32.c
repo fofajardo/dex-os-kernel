@@ -92,7 +92,7 @@ kernel_sysinfo kernel_systeminfo;
 //This stores the current virtual console the kernel will use
 DEX32_DDL_INFO *consoleDDL;
 char *dex32_versionstring="DEX Extensible Operating System, project \"Chameleon\" \
-\nVersion 1.02 build April 9 2004\n \
+\nVersion 1.032 build April 9 2004\n \
 Copyright (C) 2004  Joseph Emmanuel DL Dayo\n \
 Developed as a requirement for CMSC 190 at the Institute of Computer Science\n \
 University of the Philippines, Los Baños.\n\n \
@@ -249,7 +249,7 @@ void dex32_startup()
     textcolor(YELLOW);
     printf("DEX");
     textcolor(WHITE);
-    printf("%-76s\n"," Extensible Operating System v.1.02 Beta project \"Chameleon\"");
+    printf("%-76s\n"," Extensible Operating System v.1.032 Beta project \"Chameleon\"");
     textcolor(WHITE);
     textbackground(BLACK);
     printf("BUILD April 9 2004\n");

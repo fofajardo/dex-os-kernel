@@ -122,33 +122,33 @@ return fg_getinfo(getprocessid());
 
 fg_processinfo *fg_register(DEX32_DDL_INFO *scr, int keyboard)
 {
-//first check if there is any slot for another virtual console
-int i, slot = -1;
-DWORD cpuflags;
-fg_processinfo *new_vconsole;
-for (i=0; i < FG_MAXCONSOLE; i++)
-    {
-        if (fg_vconsoles[i] == 0) {slot = i;break;};
-    };
-
-//oops! no more slots left, return with error
-if (slot == -1) return -1; 
-new_vconsole = (fg_processinfo*) malloc(sizeof(fg_processinfo));
-memset(new_vconsole,0,sizeof(fg_processinfo));
-
-/*Lock when entering a mutual exclusion section*/
-dex32_stopints(&cpuflags);
-
-new_vconsole->id = slot;
-new_vconsole->size = sizeof(fg_processinfo);
-new_vconsole->screen = scr;
-new_vconsole->keyboardfocus = keyboard;
-new_vconsole->pid = getprocessid();
-fg_vconsoles[slot] = new_vconsole;
-
-dex32_restoreints(cpuflags);
-
-return new_vconsole;
+        //first check if there is any slot for another virtual console
+        int i, slot = -1;
+        DWORD cpuflags;
+        fg_processinfo *new_vconsole;
+        for (i=0; i < FG_MAXCONSOLE; i++)
+            {
+                if (fg_vconsoles[i] == 0) {slot = i;break;};
+            };
+        
+        //oops! no more slots left, return with error
+        if (slot == -1) return -1; 
+        new_vconsole = (fg_processinfo*) malloc(sizeof(fg_processinfo));
+        memset(new_vconsole,0,sizeof(fg_processinfo));
+        
+        /*Lock when entering a mutual exclusion section*/
+        dex32_stopints(&cpuflags);
+        
+        new_vconsole->id = slot;
+        new_vconsole->size = sizeof(fg_processinfo);
+        new_vconsole->screen = scr;
+        new_vconsole->keyboardfocus = keyboard;
+        new_vconsole->pid = getprocessid();
+        fg_vconsoles[slot] = new_vconsole;
+        
+        dex32_restoreints(cpuflags);
+        
+        return new_vconsole;
 };
 
 int fg_exit()

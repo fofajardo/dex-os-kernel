@@ -118,11 +118,10 @@ void  kbd_irq(void)
    dex32_stopints(&flags);
 /* read I/O port 60h to reset interrupt at 8042 keyboard controller chip */
 	scan_code = inportb(0x60);
-    c=set_scancode_to_ascii(scan_code,kb_current_set);
-
+    c = set_scancode_to_ascii(scan_code,kb_current_set);
    if (c!=-1)
     {
-    
+
            if (!kb_dohotkey(c,kbd_status))
            {     
                    if (c == SOFT_RESET) ps_shutdown();
@@ -205,6 +204,9 @@ static int write_kbd_await_ack(unsigned val)
 	return 0;
 };
 
+/*Initializes the keyboard hardware, the desired scancode set is
+  placed in ss (a value of zero means use the current scancode set
+  the keyboard supports)*/
 static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat)
 {
     	while(read_kbd() != -1)
@@ -215,10 +217,21 @@ static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat)
     	write_kbd(0x64, 0x60);
     /* ...and either disable or enable AT-to-XT keystroke conversion */
     	write_kbd(0x60, xlat ? 0x65 : 0x25);
+
     /* program desired scancode set */
     	write_kbd_await_ack(0xF0);
     
-    /*Make sure keyboard supports set, if not we use the other one*/
+    /*OK let's get the current scan code set*/
+    if (ss == 0)
+    {
+        write_kbd_await_ack(0);
+        ss = read_kbd();
+        printf("kb_driver: Current set = %d.\n", ss);
+    }
+        else /*User specified the scancode to use*/
+    {
+    
+    /*Make sure keyboard supports this set, if not we use the other one*/
      	if (write_kbd_await_ack(ss) == -1)
      	{
             if (ss == 1) 
@@ -228,8 +241,10 @@ static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat)
                     
             write_kbd_await_ack(ss);
         };
-        
-        kb_current_set = ss;
+     };   
+     
+     //Make the current keybaord scancode known to the whole driver
+     kb_current_set = ss;
     /* we want all keys to return both a make code (when pressed)
     and a break code (when released -- scancode set 3 only) */
     	if(ss == 3)
@@ -261,98 +276,8 @@ void kb_setleds(unsigned int keyboard_status)
 
 static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
 {
-	static const unsigned char map[] =
-	{
-/* 00 */0,	0x1B,	'1',	'2',	'3',	'4',	'5',	'6',
-/* 08 */'7',	'8',	'9',	'0',	'-',	'=',	'\b',	'\t',
-/* 10 */'q',	'w',	'e',	'r',	't',	'y',	'u',	'i',
-/* 1Dh is left Ctrl */
-/* 18 */'o',	'p',	'[',	']',	'\n',	0,	'a',	's',
-/* 20 */'d',	'f',	'g',	'h',	'j',	'k',	'l',	';',
-/* 2Ah is left Shift */
-/* 28 */'\'',	'`',	0,	'\\',	'z',	'x',	'c',	'v',
-/* 36h is right Shift */
-/* 30 */'b',	'n',	'm',	',',	'.',	'/',	0,	0,
-/* 38h is left Alt, 3Ah is Caps Lock */
-/* 38 */0,	' ',	0,	KEY_F1,	KEY_F2,	KEY_F3,	KEY_F4,	KEY_F5,
-/* 45h is Num Lock, 46h is Scroll Lock */
-/* 40 */KEY_F6,	KEY_F7,	KEY_F8,	KEY_F9,	KEY_F10,0,	0,	KEY_HOME,
-/* 48 */KEY_UP,	KEY_PGUP,'-',	KEY_LFT,'5',	KEY_RT,	'+',	KEY_END,
-/* 50 */KEY_DN,	KEY_PGDN,KEY_INS,KEY_DEL,0,	0,	0,	KEY_F11,
-/* 58 */KEY_F12
-	};
-	
-	static const unsigned char shift_map[] =
-	{
-/* 00 */0,	0x1B,	'!',	'@',	'#',	'$',	'%',	'^',
-/* 08 */'&',	'*',	'(',	')',	'_',	'+',	'\b',	'\t',
-/* 10 */'Q',	'W',	'E',	'R',	'T',	'Y',	'U',	'I',
-/* 1Dh is left Ctrl */
-/* 18 */'O',	'P',	'{',	'}',	'\n',	0,	'A',	'S',
-/* 20 */'D',	'F',	'G',	'H',	'J',	'K',	'L',	':',
-/* 2Ah is left Shift */
-/* 28 */'"',	'~',	0,	'|',	'Z',	'X',	'C',	'V',
-/* 36h is right Shift */
-/* 30 */'B',	'N',	'M',	'<',	'>',	'?',	0,	0,
-/* 38h is left Alt, 3Ah is Caps Lock */
-/* 38 */0,	' ',	0,	KEY_F1,	KEY_F2,	KEY_F3,	KEY_F4,	KEY_F5,
-/* 45h is Num Lock, 46h is Scroll Lock */
-/* 40 */KEY_F6,	KEY_F7,	KEY_F8,	KEY_F9,	KEY_F10,0,	0,	KEY_HOME,
-/* 48 */KEY_UP,	KEY_PGUP,'-',	KEY_LFT,'5',	KEY_RT,	'+',	KEY_END,
-/* 50 */KEY_DN,	KEY_PGDN,KEY_INS,KEY_DEL,0,	0,	0,	KEY_F11,
-/* 58 */KEY_F12
-	};
-	
-	static const unsigned char map3[] =
-	{
-/* 00 */0,	0,	0,	0,	0,	0,	0,	KEY_F1,
-/* 08 */0x1B,	0,	0,	0,	0,	0x09,	'~',	KEY_F2,
-/* 11 is left Ctrl; 12 is left Shift; 14 is CapsLock */
-/* 10 */0,	0,	0,	0,	0,	'q',	'!',	KEY_F3,
-/* 19 is left Alt */
-/* 18 */0,	0,	'z',	's',	'a',	'w',	'@',	KEY_F4,
-/* 20 */0,	'c',	'x',	'd',	'e',	'$',	'#',	KEY_F5,
-/* 28 */0,	' ',	'v',	'f',	't',	'r',	'%',	KEY_F6,
-/* 30 */0,	'n',	'b',	'h',	'g',	'y',	'^',	KEY_F7,
-/* 39 is right Alt */
-/* 38 */0,	0,	'm',	'j',	'u',	'&',	'*',	KEY_F8,
-/* 40 */0,	'<',	'k',	'i',	'o',	')',	'(',	KEY_F9,
-/* 48 */0,	'>',	'?',	'l',	':',	'p',	'_',	KEY_F10,
-/* 50 */0,	0,	'"',	0,	'{',	'+',	KEY_F11,KEY_PRNT,
-/* 58 is right Ctrl; 59 is right Shift; 5F is Scroll Lock */
-/* 58 */0,	0,	'\n',	'}',	'|',	0,	KEY_F12,0,
-/* 60 */KEY_DN,	KEY_LFT,KEY_PAUSE,KEY_UP,KEY_DEL,KEY_END,0x08,	KEY_INS,
-/* 68 */0,	'1',	KEY_RT,	'4',	'7',	KEY_PGDN,KEY_HOME,KEY_PGUP,
-/* 76 is Num Lock */
-/* 70 */'0',	'.',	'2',	'5',	'6',	'8',	0,	'/',
-/* 78 */0,	0x0D,	'3',	0,	'+',	'9',	'*',	0,
-/* 80 */0,	0,	0,	0,	'-',	0,	0,	0,
-/* 88 */0,	0,	0,	KEY_LWIN,KEY_RWIN,KEY_MENU,0,	0
-	};
-	
-	static const unsigned char shift_map3[] =
-	{
-/* 00 */0,	0,	0,	0,	0,	0,	0,	KEY_F1,
-/* 08 */0x1B,	0,	0,	0,	0,	0x09,	'`',	KEY_F2,
-/* 10 */0,	0,	0,	0,	0,	'Q',	'1',	KEY_F3,
-/* 18 */0,	0,	'Z',	'S',	'A',	'W',	'2',	KEY_F4,
-/* 20 */0,	'C',	'X',	'D',	'E',	'4',	'3',	KEY_F5,
-/* 28 */0,	' ',	'V',	'F',	'T',	'R',	'5',	KEY_F6,
-/* 30 */0,	'N',	'B',	'H',	'G',	'Y',	'6',	KEY_F7,
-/* 38 */0,	0,	'M',	'J',	'U',	'7',	'8',	KEY_F8,
-/* 40 */0,	',',	'K',	'I',	'O',	'0',	'9',	KEY_F9,
-/* 48 */0,	'.',	'/',	'L',	';',	'P',	'-',	KEY_F10,
-/* 50 */0,	0,	'\'',	0,	'[',	'=',	KEY_F11,KEY_PRNT,
-/* 58 */0,	0,	'\n',	']',	'\\',	0,	KEY_F12,0,
-/* 60 */KEY_DN,	KEY_LFT,KEY_PAUSE,KEY_UP,KEY_DEL,KEY_END,0x08,	KEY_INS,
-/* 68 */0,	KEY_END,KEY_RT,	KEY_LFT,KEY_HOME,KEY_PGDN,KEY_HOME,KEY_PGUP,
-/* 70 */KEY_INS,KEY_DEL,KEY_DN,	'5',	KEY_RT,	KEY_UP,	0,	'/',
-/* 78 */0,	0x0D,	KEY_PGDN,0,	'+',	KEY_PGUP,'*',	0,
-/* 80 */0,	0,	0,	0,	'-',	0,	0,	0,
-/* 88 */0,	0,	0,	KEY_LWIN,KEY_RWIN,KEY_MENU,0,	0
-	};
 
-	static unsigned saw_break_code;
+	static unsigned saw_break_code, saw_extended_code;
 /**/
 	unsigned temp;
 
@@ -364,6 +289,17 @@ static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
 		code &= 0x7F;
 	}
 	
+	if (code == 0xF0 && code_set == 2)
+	{
+	    saw_break_code = 1;
+	    return -1;
+	}
+	
+	/*OK, this is an extended code.. let's decode it.*/
+	if (code == 0xe0 && code_set == 2)
+	{
+	    return -1;
+	}
 	//set 3
 	if(code == 0xF0 && code_set == 3)
 	{
@@ -376,14 +312,32 @@ static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
 	{
 		if(code == RAW1_LEFT_ALT || code == RAW1_RIGHT_ALT)
 			kbd_status &= ~KBD_META_ALT;
-		else if(code == RAW1_LEFT_CTRL || code == RAW1_RIGHT_CTRL)
+		else if (code == RAW1_LEFT_CTRL || code == RAW1_RIGHT_CTRL)
 			kbd_status &= ~KBD_META_CTRL;
-		else if(code == RAW1_LEFT_SHIFT || code == RAW1_RIGHT_SHIFT)
+		else if (code == RAW1_LEFT_SHIFT || code == RAW1_RIGHT_SHIFT)
 			kbd_status &= ~KBD_META_SHIFT;
 		saw_break_code = 0;
 		return -1;
 	}
 	
+	if( saw_break_code && code_set == 2)
+	{
+		
+    		if ( (code == RAW2_LEFT_ALT) ||  (code == RAW2_RIGHT_ALT) )
+    			kbd_status &= ~KBD_META_ALT;
+	    		else 
+            if ( (code == RAW2_LEFT_CTRL) || (code == RAW2_RIGHT_CTRL ) )
+    			kbd_status &= ~KBD_META_CTRL;
+ 			
+    		else if (code == RAW2_LEFT_SHIFT || code == RAW2_RIGHT_SHIFT )
+    			kbd_status &= ~KBD_META_SHIFT;
+    			
+    		saw_extended_code = 0;
+		    saw_break_code = 0;
+
+		return -1;
+	}
+
 	if(saw_break_code && code_set == 3 )
 	{
 		if(code == RAW3_LEFT_ALT || code == RAW3_RIGHT_ALT)
@@ -404,16 +358,45 @@ static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
         		kbd_status |= KBD_META_ALT;
         		return -1;
         	}
+        	
         	if(code == RAW1_LEFT_CTRL || code == RAW1_RIGHT_CTRL)
         	{
         		kbd_status |= KBD_META_CTRL;
         		return -1;
         	}
+        	
         	if(code == RAW1_LEFT_SHIFT || code == RAW1_RIGHT_SHIFT)
         	{
         		kbd_status |= KBD_META_SHIFT;
         		return -1;
         	}
+	};
+	
+	if (code_set == 2)
+    {
+        	if(code == RAW2_LEFT_ALT || (code == RAW2_RIGHT_ALT) )
+        	{
+        		kbd_status |= KBD_META_ALT;
+        		return -1;
+        	}
+        	
+        	if(code == RAW2_LEFT_CTRL || code == RAW2_RIGHT_CTRL )
+        	{
+        		kbd_status |= KBD_META_CTRL;
+        		return -1;
+        	}
+        	
+        	if(code == RAW2_LEFT_SHIFT || (code == RAW2_RIGHT_SHIFT) )
+        	{
+        		kbd_status |= KBD_META_SHIFT;
+        		return -1;
+        	}
+  	};
+	
+	if (saw_extended_code) 
+	{
+    	saw_extended_code=0;
+        return -1;
 	};
 	
 	if (code_set == 3)
@@ -459,6 +442,29 @@ have on-off (toggle or XOR) action, instead of momentary action */
         	};
 	};
 	
+	 if (code_set == 2  )
+    {
+        	if(code == RAW2_SCROLL_LOCK)
+        	{
+        		kbd_status ^= KBD_META_SCRL;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+        	if(code == RAW2_NUM_LOCK)
+        	{
+        		kbd_status ^= KBD_META_NUM;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+        	
+        	if(code == RAW2_CAPS_LOCK)
+        	{
+        		kbd_status ^= KBD_META_CAPS;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	};
+	};
+	
 	if (code_set == 3)
 	{
         	if(code == RAW3_SCROLL_LOCK)
@@ -490,6 +496,16 @@ have on-off (toggle or XOR) action, instead of momentary action */
    		    return temp+400;
         };	
         
+     if ( (kbd_status & KBD_META_ALT) && (kbd_status & KBD_META_CTRL) && code_set == 2 )
+        {
+      		if(code >= sizeof(shift_map2) / sizeof(shift_map2[0]))
+			return -1;
+   		    temp = shift_map2[code];
+   		    if (temp == KEY_DEL) return SOFT_RESET;
+   		    
+   		    return temp+400;
+        };	    
+        
     if ( (kbd_status & KBD_META_ALT) && (kbd_status & KBD_META_CTRL) && code_set == 3 )
         {
       		if(code >= sizeof(shift_map3) / sizeof(shift_map3[0]))
@@ -511,6 +527,13 @@ have on-off (toggle or XOR) action, instead of momentary action */
         	if(code >= sizeof(map) / sizeof(map[0]))
     			return -1;
     		temp = map[code];
+		}
+		else
+       if (code_set == 2)
+	    {
+        	if(code >= sizeof(map2) / sizeof(map2[0]))
+    			return -1;
+    		temp = map2[code];
 		}
 		else
 		if (code_set == 3)
@@ -537,6 +560,13 @@ have on-off (toggle or XOR) action, instead of momentary action */
     		temp = shift_map[code];
 		}
 		else
+		if (code_set == 2)
+	    {
+    		if(code >= sizeof(shift_map2) / sizeof(shift_map2[0]))
+    			return -1;
+    		temp = shift_map2[code];
+		}
+		else
 		if (code_set == 3)
 		{
         	if(code >= sizeof(shift_map3) / sizeof(shift_map3[0]))
@@ -550,10 +580,15 @@ have on-off (toggle or XOR) action, instead of momentary action */
 /* caps lock? */
 		if(kbd_status & KBD_META_CAPS)
 		{
-			if(temp >= 'A' && temp <= 'Z' && code_set ==1)
-				temp = map[code];
-			else
-			    temp == map3[code];
+			if(temp >= 'A' && temp <= 'Z')
+            {
+                switch (code_set)
+                {
+                case 1 : temp = map[code]; break;
+                case 2 : temp = map2[code]; break;
+                case 3 : temp = map3[code]; break;
+                };
+            };
 		}
 	}
 	else
@@ -563,6 +598,13 @@ have on-off (toggle or XOR) action, instead of momentary action */
     		if(code >= sizeof(map) / sizeof(map[0]))
     			return -1;
     		temp = map[code];
+		}
+		else
+		if (code_set == 2)
+		{
+			if(code >= sizeof(map2) / sizeof(map2[0]))
+    			return -1;
+    		temp = map2[code];
 		}
 		else
 		{
@@ -576,10 +618,15 @@ have on-off (toggle or XOR) action, instead of momentary action */
 			
 		if(kbd_status & KBD_META_CAPS)
 		{
-			if(temp >= 'a' && temp <= 'z' && code_set == 1)
-				temp = shift_map[code];
-			else
-			   temp =shift_map3[code];
+			if (temp >= 'a' && temp <= 'z')
+            { 
+                switch (code_set)
+                {
+                case 1 : temp = shift_map[code]; break;
+                case 2 : temp = shift_map2[code]; break;
+                case 3 : temp = shift_map3[code]; break;
+                };
+            };
 		}
 	}
 	
@@ -808,6 +855,8 @@ int kb_sendmessage(int type,const char *message)
                                i++;
                                };
                          }
+                     if (strcmp(p[i],"-codeset")==0)
+                        printf("keyb: Using set (%d)\n", kb_current_set);
                  };
               free(temp);
               return 1;
