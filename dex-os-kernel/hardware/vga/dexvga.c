@@ -1239,6 +1239,14 @@ static void demo_graphics(void)
 	set_text_mode(0);
 }
 
+/***********************************************************************
+Wait for the vertical retrace*/
+void dex32vga_waitretrace()
+{
+  while(inportb(0x3DA)&0x8);
+  while(!(inportb(0x3DA)&0x8));
+};
+
 
 void vga_init()
 {

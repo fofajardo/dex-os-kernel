@@ -5,6 +5,8 @@
   Date: 28/11/03 15:22
   Description: This module provides low-level keyboard functions like getch()\
   
+  1/1/2004 - Added enhancement support for the MLQsched module
+  
     DEX educational extensible operating system 1.0 Beta
     Copyright (C) 2004  Joseph Emmanuel DL Dayo
     
@@ -662,13 +664,31 @@ int kb_ready()
 char getch()
  {
    unsigned int code,c;
+   
+   /***** Send to the scheduler, if it supports it, 
+    that this process is to be sent to the io-queue, this is
+    quite hackish though***/
+   devmgr_scheduler_extension *cursched = 
+        (devmgr_scheduler_extension*)extension_table[CURRENT_SCHEDULER].iface; 
+        
+   devmgr_sendmessage(cursched->hdr.id,2,current_process->processid);
+
+           
    do
    {
     keyboard_wait();
     c=deq(&_q,&code);
+    
+    if (getprocessid() != fg_getkeyboardowner())
+        devmgr_sendmessage(cursched->hdr.id,2,current_process->processid);
+    else
+    	devmgr_sendmessage(cursched->hdr.id,3,current_process->processid);	
+    	
    }
    while (c==-1);
   
+   devmgr_sendmessage(cursched->hdr.id,3,current_process->processid);
+   
    return ((char)code);
  };
 
@@ -683,6 +703,7 @@ void keyboard_wait()
            && current_process->owner == fg_getkeyboardowner())
      break;
      taskswitch();
+     
     };
  };
 

@@ -21,32 +21,61 @@ DEX32_DDL_INFO *Dex32GetProcessDevice()
     return current_process->outdev;
 };
 
+/*This function creates a default DDL device which is a
+simple 80x25 color text mode screen*/
 DEX32_DDL_INFO *Dex32CreateDDL()
+{
+    return Dex32NewDDL(DDL_CGA_TEXT);
+};
+
+/*This function fills in the DDL structure depending on its type*/
+void Dex32ConfigureDDL(DEX32_DDL_INFO *dev, int type)
+{
+    switch (type)
+    {
+       case DDL_CGA_TEXT : 
+            
+            { 
+                dev->mem_ptr=(char*)malloc(80*25*2*sizeof(char));    
+                memset(dev->mem_ptr,0,80*25*2*sizeof(char));
+                dev->buf_ptr=dev->mem_ptr; 
+                
+                dev->buf_size=80*25*2*sizeof(char);
+                dev->resolution_x = 80;
+                dev->resolution_y = 25;
+                dev->bits_per_pixel =2;
+                dev->hdw_ptr = (char*)0xB8000;
+                dev->type = DDL_CGA_TEXT;
+                
+                Dex32SetTextColor(dev,WHITE);
+                Dex32SetTextBackground(dev,BLACK);
+
+            } break;    
+            
+
+    };   
+};    
+
+DEX32_DDL_INFO *Dex32NewDDL(int type)
 {
     DEX32_DDL_INFO *dev=(DEX32_DDL_INFO*)malloc(sizeof(DEX32_DDL_INFO));
     memset(dev,0,sizeof(DEX32_DDL_INFO));
     dev->size = sizeof(DEX32_DDL_INFO);
     totalDDL++;
     dev->handle=totalDDL;
-    dev->buf_size=80*25*2*sizeof(char);
-    dev->mem_ptr=(char*)malloc(80*25*2*sizeof(char));    
-    memset(dev->mem_ptr,0,80*25*2*sizeof(char));
-    dev->buf_ptr=dev->mem_ptr; 
-    dev->hdw_ptr=(char*)0xB8000;
-    dev->type=DDL_CGA;
+    
+    Dex32ConfigureDDL(dev,type);
+    
     dev->active=0;
     dev->locked=0;
     dev->lines=0;
     dev->scroll = 1;    
-    Dex32SetTextColor(dev,WHITE);
-    Dex32SetTextBackground(dev,BLACK);
-    
     dev->curx=0;dev->cury=0;
     if (ActiveDDL==0) {Dex32SetActiveDDL(dev);};
-    
     return dev;
-};
 
+};   
+ 
 DEX32_DDL_INFO *Dex32SetProcessDDL(DEX32_DDL_INFO *dev, int pid)
 {
     DEX32_DDL_INFO *ret=0;
@@ -192,7 +221,7 @@ void Dex32PutC(DEX32_DDL_INFO *dev,char c)
        if (c=='\t')
        {
        int i;
-              for (i=0;i<3;i++)
+              for (i=0; i<3; i++)
               Dex32PutC(dev,' ');
        return;
        }
@@ -261,6 +290,8 @@ int Dex32PutChar(DEX32_DDL_INFO *dev,int x, int y,char c,char color)
    };
 };
 
+/* The following functions work on regions of the screen and is used for
+ applications that buffer their output before printing them to the screen*/
 int Dex32PutText(DEX32_DDL_INFO *dev,int left, int top, int right, int bottom, char *source)
 {
    DWORD vidmemloc=dev->buf_ptr;

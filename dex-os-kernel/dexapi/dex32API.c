@@ -4,7 +4,7 @@ This is the code that manages system calls from user mode programs (Level 3)
 currently applications make sys calls using interrupt 0x30h (User Interrupt Gate) 
 although a user procedure call is in the works
 
-    DEX educational extensible operating system 1.0 Beta
+    DEX extensible operating system
     Copyright (C) 2004  Joseph Emmanuel DL Dayo
 
     This program is free software; you can redistribute it and/or modify
