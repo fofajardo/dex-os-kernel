@@ -820,6 +820,7 @@ int kb_addhotkey(WORD key,WORD status,void (*handler)())
     return hotkey->id;
 };
 
+//Handles parameters passed to the keyboard driver
 int kb_sendmessage(int type,const char *message)
 {
     if (type == DEVMGR_MESSAGESTR)
@@ -855,8 +856,24 @@ int kb_sendmessage(int type,const char *message)
                                i++;
                                };
                          }
+                         
                      if (strcmp(p[i],"-codeset")==0)
                         printf("keyb: Using set (%d)\n", kb_current_set);
+                        
+                     if (strcmp(p[i],"-useset")==0)
+                         {
+                               if (i+1 < c)
+                               {
+                                   int set = atoi(p[i+1]);
+                                   
+                                   if (set>=1 && set <=3)
+                                   {
+                                           init_kbd(set,3,0);
+                                           printf("keyb: keyboard now using set [%d].\n",set);
+                                           i++;
+                                   };
+                               };
+                         }
                  };
               free(temp);
               return 1;

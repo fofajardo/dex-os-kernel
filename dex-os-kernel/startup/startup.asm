@@ -14,7 +14,7 @@
 ;MULTI-BOOT compliant. Loadable by the GRUB boot loader
 
 MULTIBOOT_MAGIC equ 0x1BADB002
-MULTIBOOT_FLAGS equ 0x10002
+MULTIBOOT_FLAGS equ 0x10006
 			   
 
 global _startup
