@@ -166,7 +166,7 @@ FILHDR  *fhdr = (FILHDR*) coff_image;
 //validate if this file is a coff format executable
 #ifdef DEBUG_COFF
 printf("dex32_coff_loader: started\n");
-printf("dex32_coff_loader: magic number obtained [%s]\n",itoa(fhdr->f_magic,temp,16));
+printf("dex32_coff_loader: magic number obtained [0x%x]\n",fhdr->f_magic);
 #endif
 
 if (fhdr->f_magic==I386MAGIC)
@@ -186,14 +186,14 @@ if (fhdr->f_magic==I386MAGIC)
         void (*entrypoint)(int,char**)=0;
         
 	#ifdef DEBUG_COFF
-		printf("dex32_coff_loader: magic number 2 obtained [%s]\n",itoa(aouthdr->magic,temp,16));
+		printf("dex32_coff_loader: magic number 2 obtained [0x%x]\n",aouthdr->magic);
 	#endif
 	
 	if (aouthdr->magic!=ZMAGIC) return 0; //check again
 	printf("dex32_coff_loader: loading executable..\n");
 
 	#ifdef DEBUG_COFF
-		printf("dex32_coff_loader: entry point at %sH\n",itoa(aouthdr->entry,temp,16));
+		printf("dex32_coff_loader: entry point at 0x%x\n",aouthdr->entry);
 		printf("dex32_coff_loader: Total sections %d\n",totalsections);
 	#endif
 
@@ -301,7 +301,7 @@ if (fhdr->f_magic==I386MAGIC)
 			#ifdef DEBUG_COFF
 				printf("dex32_coff_loader: Section name   [%s]\n",section_name);
 				printf("dex32_coff_loader: ** file offset [%d]\n",rawdata);
-				printf("dex32_coff_loader: ** load at     [%sH]\n",itoa(vaddr,temp,16));
+				printf("dex32_coff_loader: ** load at     [0x%x]\n",vaddr);
 			#endif
                         
                         /*perform relocations*/
@@ -331,8 +331,8 @@ if (fhdr->f_magic==I386MAGIC)
                		pagedir,PG_WR | PG_USER | PG_PRESENT);
                		
                		#ifdef DEBUG_COFF
-               			printf("dex32_coff_loader: Copying image at %s to %s..\n",
-               			itoa(coff_image+rawdata,temp2,16),itoa(tmpr->vaddr,temp,16));
+               			printf("dex32_coff_loader: Copying image at 0x%x to 0x%x..\n",
+               			coff_image+rawdata,  tmpr->vaddr);
                		#endif
                		//copy the section to main memory			
   			memcpy(tmpr->vaddr,coff_image+rawdata,size);

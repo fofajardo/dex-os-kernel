@@ -80,7 +80,7 @@ void api_init()
 {
  int i;
 
-/******************************Initialize the API****************************/ 
+/******************************Initialize the syscall table********************/ 
  for (i=0; i<API_MAXSYSCALLS ;i++)
      {
                  api_syscalltable[i].access_check = 0;     
@@ -191,6 +191,7 @@ void api_init()
      api_addsystemcall(0x98,vfs_listdir,0,API_REQUIRE_INTS);
      api_addsystemcall(0x99,vfs_mount_device,0,API_REQUIRE_INTS);
      api_addsystemcall(0x9A,vfs_unmount_device,0,API_REQUIRE_INTS);
+     api_addsystemcall(0x9B,devmgr_sendmessage,0,0);
 };
 
 

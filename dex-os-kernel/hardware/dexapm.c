@@ -28,22 +28,22 @@ void dex32apm_init()
 
 void dex32apm_off()
  {
-  saveregs r;
-  char tmpstr[255],tmpstr1[255],tmpstr2[255],tmpstr3[255];
-  r.CS=APM_CS32;
-  r.DS=APM_DS;
-  r.ES=APM_DS;
-  r.SS=SYS_STACK_SEL;
-  r.FS=APM_DS;
-  r.GS=APM_DS;
-  r.EAX=0x5307;
-  r.EBX=1;
-  r.ECX=3;
-  printf("APM information: CS32 base:%s  CS16 base:%s DS base:%s offset:%s\n",
-         itoa(apmloc->pmodecodeseg << 1,tmpstr,16),
-         itoa(apmloc->rmodecodeseg << 1,tmpstr1,16),
-         itoa(apmloc->apmdataseg << 1,tmpstr2,16),
-         itoa(apmloc->entrypoint ,tmpstr3,16));
-  getch();
-  dex32_asyncproc(&r,apmloc->entrypoint,"dex32apm",5000);
+//  saveregs r;
+//  char tmpstr[255],tmpstr1[255],tmpstr2[255],tmpstr3[255];
+//  r.CS=APM_CS32;
+//  r.DS=APM_DS;
+//  r.ES=APM_DS;
+//  r.SS=SYS_STACK_SEL;
+//  r.FS=APM_DS;
+//  r.GS=APM_DS;
+//  r.EAX=0x5307;
+//  r.EBX=1;
+//  r.ECX=3;
+//  printf("APM information: CS32 base:%s  CS16 base:%s DS base:%s offset:%s\n",
+//         itoa(apmloc->pmodecodeseg << 1,tmpstr,16),
+//         itoa(apmloc->rmodecodeseg << 1,tmpstr1,16),
+//         itoa(apmloc->apmdataseg << 1,tmpstr2,16),
+//         itoa(apmloc->entrypoint ,tmpstr3,16));
+//  getch();
+//  dex32_asyncproc(&r,apmloc->entrypoint,"dex32apm",5000);
  ;};

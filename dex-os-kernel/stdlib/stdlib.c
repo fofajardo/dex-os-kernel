@@ -488,11 +488,6 @@ char *strupr(char *str)
    return s;
  };
 
-extern char *itoa (
-        int val,
-        char *buf,
-        int radix
-        );
 
 int atoi(const char *str)
 {

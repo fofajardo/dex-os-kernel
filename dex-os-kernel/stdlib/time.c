@@ -39,9 +39,7 @@ char *getmonthname(int month,char *str)
 
 char *datetostr(dex32_datetime *d,char *str)
   {
-     char temp1[20],temp2[20],temp3[20];
-     sprintf(str,"%s/%s/%s",itoa(d->month,temp1,10),
-            itoa(d->day,temp2,10),itoa(d->year,temp3,10));
+     sprintf(str,"%d/%d/%d",d->month,d->day,d->year);
      return str;
   };
 

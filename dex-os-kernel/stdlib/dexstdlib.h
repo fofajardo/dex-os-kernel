@@ -32,5 +32,4 @@ char toupper(char c);
 void * memcpy (void * dst, const void * src,unsigned int count);
 void *memmove (void *dst, const void *src,unsigned int count);
 char *strupr(char *str);
-char *itoa (int val,char *buf,int radix);
        

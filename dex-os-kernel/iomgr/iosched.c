@@ -110,8 +110,8 @@ DWORD iomgr_diskmgr()
                        else
               { 
                  #ifdef DEBUG_READ         
-                 printf("reading %d blocks starting at %d to location 0x%s.\n",
-                           ptr->num_of_blocks, ptr->lowblock,itoa(ptr->buf,temp,16));
+                 printf("reading %d blocks starting at %d to location 0x%x.\n",
+                           ptr->num_of_blocks, ptr->lowblock,ptr->buf);
                  #endif
 
                  if (myblock->read_block(ptr->lowblock,ptr->buf,ptr->num_of_blocks))

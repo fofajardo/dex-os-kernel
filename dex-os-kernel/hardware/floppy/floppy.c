@@ -45,7 +45,6 @@ void flop_initcache()
   //initialize the cache
   for (i=0;i<CACHESIZE;i++)
    {
-     cacheptr[i].sectorno=0;
      cacheptr[i].valid=0;
      cacheptr[i].accessed=0;
      cacheptr[i].dirty=0;
@@ -66,16 +65,10 @@ void freecache(DWORD sectornumber)
  {
   int index;
 
-  for (index=0;index<CACHESIZE;index++)
-  {
-   if (cacheptr[index].sectorno==sectornumber&&
-       cacheptr[index].valid)
+   if (cacheptr[sectornumber].valid)
           {
-            cacheptr[index].valid=0;
+            cacheptr[sectornumber].valid=0;
           };
-
-   }
-
  };
 
 int shouldflush()
@@ -89,7 +82,6 @@ int shouldflush()
             };
     }
     return res;
-
  };
  
 void start_priority()
@@ -104,21 +96,12 @@ dex32_irqcntl(IRQ_TIMER | IRQ_KEYBOARD | IRQ_FDC);
 enable_taskswitching();
 };
 
-int compare_cache (const void *a, const void *b)
-{
-  cache *da = (cache *) a;
-  cache *db = (cache *) b;
-
-  return (da->sectorno > db->sectorno) - (da->sectorno < db->sectorno);
-}
-
-
 
 int flushcache()
   {
     int res=0,index,block;
     start_priority();
-    qsort(cacheptr,CACHESIZE,sizeof(cache),compare_cache);
+
     for (index=0;index<CACHESIZE;index++)
     {
        if (cacheptr[index].valid&&cacheptr[index].dirty)
@@ -134,7 +117,7 @@ int flushcache()
                  #ifdef WRITE_DEBUG
                  printf("writing %d/%d..\n",cacheptr[index].sectorno,CACHESIZE);
                  #endif
-                 res = fdc_rw(cacheptr[index].sectorno,cacheptr[index].buf,FALSE);
+                 res = fdc_rw(index,cacheptr[index].buf,FALSE);
               };
 
               if (res==0) res= -1; 
@@ -172,43 +155,15 @@ int storecache(char *buf,DWORD sectornumber,int dirty)
    int index;
    int freeslot = -1;
 
-
-  for (index=0;index<CACHESIZE;index++)
-   {
-   if (!cacheptr[index].valid)
-          freeslot=index;
-   if (cacheptr[index].valid&&cacheptr[index].sectorno==sectornumber)
-          {
-            //optimzation: If the data to be placed into a slot
-            //is the same as the one already in the slot then
-            //ignore this command.
-            if (memcmp(&cacheptr[index].buf,buf,ALLOCSIZE)!=0)
+   
+    if (memcmp(&cacheptr[sectornumber].buf,buf,ALLOCSIZE)!=0)
             {
-              memcpy(&cacheptr[index].buf,buf,ALLOCSIZE);
-              cacheptr[index].valid=1;
-              cacheptr[index].accessed=0;
-              cacheptr[index].sectorno=sectornumber;
-              cacheptr[index].dirty=dirty;
+              memcpy(&cacheptr[sectornumber].buf,buf,ALLOCSIZE);
+              cacheptr[sectornumber].valid=1;
+              cacheptr[sectornumber].accessed=0;
+              cacheptr[sectornumber].dirty=dirty;
             };
             return 1;
-          };
-
-   };
-
-  if (freeslot!=-1)
-            index=freeslot;
-          else
-            index=getcand();
-
-            if (index==0) return 0;
-
-            memcpy(&cacheptr[index].buf,buf,ALLOCSIZE);
-            cacheptr[index].valid=1;
-            cacheptr[index].accessed=0;
-            cacheptr[index].sectorno=sectornumber;
-            cacheptr[index].dirty=dirty;
-            return 1;
-
  };
 
 int getcache(char *buf,DWORD sectornumber, DWORD numblocks)
@@ -218,16 +173,12 @@ int getcache(char *buf,DWORD sectornumber, DWORD numblocks)
   for (i=0;i<numblocks;i++)
   {  
     res = 0;
-    for (index=0;index<CACHESIZE;index++)
-    {
-       if (cacheptr[index].valid&&cacheptr[index].sectorno==sectornumber + i)
+    if (cacheptr[sectornumber+i].valid)
           {
-            memcpy(buf + ofs,cacheptr[index].buf,ALLOCSIZE);
-            cacheptr[index].accessed=time_count;
-            res = 1; break;
+            memcpy(buf + ofs,cacheptr[sectornumber+i].buf,ALLOCSIZE);
+            cacheptr[sectornumber+i].accessed = time_count;
+            res = 1; 
           };
-    };
-    
     ofs+=512;
     if (res == 0) return 0;
   };

@@ -325,8 +325,8 @@ int module_call_library(void *entrypoint, lib_PCB *lib_info, char *parameters)
   devmgr_generic *interface=devmgr_getdevice(devmgr_finddevice("devmgr"));
   libentrypoint = entrypoint;
   
-  printf("pe_module: Calling dex32 compatible library entrypoint located at %s..\n",
-           itoa(libentrypoint,temp,16));
+  printf("pe_module: Calling dex32 compatible library entrypoint located at 0x%x..\n",
+           libentrypoint);
   
   /*Check if module returned an error.. if so we abort the load process*/
   if (libentrypoint(interface,parameters) == -1) 
@@ -411,10 +411,9 @@ while (ptr!=0)
          {
            DWORD *fxn_names,*fxn_addr,i;
            IMAGE_EXPORT_DIRECTORY *export_directory;
-           char temp[255];
            //obtain the pointer to the export directory
            export_directory = ptr->exporttable;
-           printf("Base of library at %s\n",itoa(ptr->baseaddress,temp,16));
+           printf("Base of library at 0x%x\n",ptr->baseaddress);
            if (export_directory->AddressOfNames == 0 ) return 1;
            printf("Function listing of %s\n",modulename);      
            fxn_names=(DWORD*)((DWORD)export_directory->AddressOfNames+ptr->baseaddress);
@@ -425,7 +424,7 @@ while (ptr!=0)
              char fxnname[256],s2[255];
              DWORD fxnaddress = fxn_addr[i]+ptr->baseaddress;
              strcpy( fxnname, (char*)((DWORD)fxn_names[i]+ptr->baseaddress));
-             printf("%d. %-30s : %s\n",i,fxnname,itoa(fxnaddress,temp,16));
+             printf("%d. %-30s : 0x%x\n",i,fxnname,fxnaddress);
            };  
            printf("done.\n");          
          };
@@ -442,7 +441,6 @@ void relocate(IMAGE_BASE_RELOCATION *relocbase,DWORD actualload,
      DWORD preferedload,DWORD size)
   {
     DWORD adjust;
-    char t1[20],t2[20];
     int i;
     int delta;
     IMAGE_BASE_RELOCATION *table = relocbase;
@@ -452,8 +450,8 @@ void relocate(IMAGE_BASE_RELOCATION *relocbase,DWORD actualload,
 
     #ifdef DEBUG_PEMODULE
     printf("relocating module..\n");
-    printf("preferedload: %s, actualload: %s\n",itoa(preferedload,t1,16),
-            itoa(actualload,t2,16));
+    printf("preferedload: 0x%x, actualload: 0x%x\n",preferedload,
+            actualload);
 	 pause();
     #endif
 
@@ -467,7 +465,7 @@ void relocate(IMAGE_BASE_RELOCATION *relocbase,DWORD actualload,
 
     #ifdef DEBUG_PEMODULE
     printf("size of relocation block: %d\n", table->SizeOfBlock);
-    printf("relocbase virtual address: %s\n", itoa(table->VirtualAddress, t1, 16));
+    printf("relocbase virtual address: 0x%x\n", table->VirtualAddress);
     pause();
     #endif
 
@@ -509,11 +507,11 @@ void relocate(IMAGE_BASE_RELOCATION *relocbase,DWORD actualload,
        if (type == IMAGE_REL_BASED_HIGHLOW)
               {
                #ifdef DEBUG_PEMODULE
-               printf("IMAGE_REL_BASED_HIGHLOW: %s ->",itoa(*dd,t1,16));
+               printf("IMAGE_REL_BASED_HIGHLOW: 0x%x ->",*dd);
                #endif
                *dd+=delta;
                #ifdef DEBUG_PEMODULE
-               printf("%s\n",itoa(*dd,t1,16));
+               printf("0x%x\n",*dd);
                #endif
               }
            else
@@ -562,8 +560,8 @@ DWORD searchfxnlib(IMAGE_EXPORT_DIRECTORY *exdir,const char *search_name,DWORD b
         char fxnname[256],temp[255],s2[255];
 
         #ifdef MODULE_DEBUG
-        printf("searching  base %s\n",
-        itoa((DWORD)base,temp,16));
+        printf("searching  base 0x%x\n",
+        (DWORD)base);
         #endif
 
         conexpname((char*)(fxn_names[i]+base),fxnname);
@@ -578,7 +576,7 @@ DWORD searchfxnlib(IMAGE_EXPORT_DIRECTORY *exdir,const char *search_name,DWORD b
 
         #ifdef MODULE_DEBUG
         printf("Match found!\n");
-        printf("located at address:%s\n",itoa(fxn_addr[i]+base,temp,16));
+        printf("located at address:0x%x\n", fxn_addr[i]+base);
         pause();
         #endif
 
@@ -633,8 +631,8 @@ char temp[255];
 printf("Available libraries loaded in memory:\n");
 while (ptr!=0)
     {
-      printf("Library Name:     %s   location: %s\n",ptr->name,
-      itoa((DWORD)ptr->baseaddress,temp,16));
+      printf("Library Name:     %s   location: 0x%x\n",ptr->name,
+      ptr->baseaddress);
       ptr=ptr->next;
     };
 };

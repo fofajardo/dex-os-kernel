@@ -558,6 +558,7 @@ DWORD dex32_killkthread(DWORD processid)
     ptr = bridges_ps_findprocess(processid);
 
     dex32_stopints(&flags);
+    
     if (ptr != -1)
     {
         if (!ptr->status&PS_ATTB_UNLOADABLE)
@@ -601,7 +602,7 @@ DWORD kill_process(DWORD processid)
     if (ptr!=-1)
     {
 
-        if (! (ptr->status&PS_ATTB_UNLOADABLE) )
+        if (! (ptr->status & PS_ATTB_UNLOADABLE) )
         {
             PCB386 *parent;
             kill_children(processid); //kill child processes first
@@ -623,6 +624,7 @@ DWORD kill_process(DWORD processid)
             while (closeallfiles(ptr->processid)==1);
 
             parent=ps_findprocess(ptr->owner);
+            
             if (parent!=-1)
             {
                 parent->childwait=0;
@@ -696,12 +698,12 @@ DWORD kill_children(DWORD processid)
     ptr = bridges_ps_findprocess(processid);
     if (ptr!=-1)
     {
-    if (ptr->owner==processid && !( ptr->status&PS_ATTB_UNLOADABLE ) )
-        {
-            kill_thread(ptr);
-            sync_leavecrit(&processmgr_busy);
-            return 1;
-        };
+        if (ptr->owner==processid && !( ptr->status&PS_ATTB_UNLOADABLE ) )
+            {
+                kill_thread(ptr);
+                sync_leavecrit(&processmgr_busy);
+                return 1;
+            };
      };
 
     sync_leavecrit(&processmgr_busy); 
@@ -720,7 +722,7 @@ DWORD exit(DWORD val)
     /* tell the task switcher to kill this process by setting
        the sigterm global varaible to the current pid. If sigeterm is non-zero
        the taskswitcher terminates the process with pid equal to sigterm*/
-    sigterm=current_process->processid;
+    sigterm = current_process->processid;
     
     taskswitch();
     while (1);
@@ -1193,7 +1195,6 @@ void show_process_stat(int pid)
 {
     int total,i;
     PCB386* ptr;
-    char temp[20],temp1[20],temp2[20],temp3[20];
     total = get_processlist(&ptr);    
     for (i=0;i<total;i++)
        {
@@ -1202,18 +1203,16 @@ void show_process_stat(int pid)
                          printf("=========================================================\n");
                          printf("Name:%s", ptr[i].name);
                          printf("Parent:%d", ptr[i].owner);
-                         printf("EIP=0x%s\n",itoa(ptr[i].regs.EIP,temp,16));
-                         printf("EAX=0x%s EBX=0x%s ECX=0x%s EDX=0x%s\n",itoa(ptr[i].regs.EAX,temp,16),
-                         itoa(ptr[i].regs.EBX,temp1,16),itoa(ptr[i].regs.ECX,temp2,16),
-                         itoa(ptr[i].regs.EDX,temp3,16));
+                         printf("EIP=0x%x\n",ptr[i].regs.EIP);
+                         printf("EAX=0x%x EBX=0x%x ECX=0x%x EDX=0x%x\n",ptr[i].regs.EAX,
+                         ptr[i].regs.EBX, ptr[i].regs.ECX, ptr[i].regs.EDX);
 
-                         printf("EDI=0x%s ESI=0x%s ESP=0x%s Flags=0x%s\n",itoa(ptr[i].regs.EDI,temp,16),
-                         itoa(ptr[i].regs.ESI,temp1,16),itoa(ptr[i].regs.ESP,temp2,16),
-                         itoa(ptr[i].regs.EFLAGS,temp3,16));
+                         printf("EDI=0x%x ESI=0x%x ESP=0x%x Flags=0x%x\n",ptr[i].regs.EDI,
+                         ptr[i].regs.ESI,ptr[i].regs.ESP, ptr[i].regs.EFLAGS);
                          
                          printf("waiting: %d\n", ptr[i].waiting);
-                         printf("last system calls:(1) : 0x%s ,(2-last): 0x%s\n",
-                         itoa(ptr[i].cursyscall[0],temp2,16),itoa(ptr[i].cursyscall[1],temp,16));
+                         printf("last system calls:(1) : 0x%x ,(2-last): 0x%x\n",
+                         ptr[i].cursyscall[0],ptr[i].cursyscall[1]);
 
                  };
        };
@@ -1271,7 +1270,7 @@ void show_process()
         //update the global total
         totalsize+=psize;
         
-        printf("[%-3s]",itoa(ptr[i].processid,temp,10));
+        printf("[0x%-3x]",ptr[i].processid);
         if ( ptr[i].status & PS_ATTB_UNLOADABLE ) textcolor(RED);
         else
         if (ptr[i].accesslevel == ACCESS_SYS) textcolor(LIGHTBLUE);

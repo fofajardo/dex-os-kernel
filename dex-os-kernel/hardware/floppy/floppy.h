@@ -38,13 +38,12 @@
 #define BOOL int
 
 #define ALLOCSIZE 512
-#define CACHESIZE 1000
+#define CACHESIZE 2880
 
 unsigned int usecache=1;
 
 
 typedef struct _cache {
-    DWORD sectorno;
     DWORD accessed;
     WORD valid;
     WORD dirty;  //Used by the driver to determine if a modified block

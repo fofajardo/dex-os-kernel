@@ -97,7 +97,7 @@ if (type == DEVMGR_MESSAGESTR)
                 while (ptr!=0)
                    {
                        char temp[20];
-                       printf("%s size:%d is_free?:%d\n", itoa(ptr+sizeof(mem_malloc),temp,16), 
+                       printf("0x%x size:%d is_free?:%d\n", ptr+sizeof(mem_malloc), 
                        ptr->mem_size, ptr->isfree);
                        ptr=ptr->next;
                    };
