@@ -1,0 +1,54 @@
+=======================================================
+RamDisk - A simple virutal block device driver
+Author: Joseph Emmanuel DL Dayo
+e-mail: j_dayo@yahoo.com
+Version: 1.0
+kernel version: dex-os 1.03
+Date: April 22, 2004
+License: GNU General Public License version 2
+=======================================================
+
+Included in this package is the source code and
+binaries of a sample block device drvier. To compile
+this package, you need Bloodshed dev-cpp/mingw (compilation
+with another 32-bit compiler is theoretically possible) and
+the files syslib.o and dexsdk.a from the DEX SDK. A 
+dev-cpp project file "ramdisk.dev" is provided for your
+convenience, although you must still edit the
+project | properties | linker options to make sure
+that it points to the correct location of the
+SDK files.
+
+To install a ramdisk driver, type the following in the
+dex command line:
+
+loadmod ramdisk.dll
+
+This makes the ramdisk visible to the system. Then
+mount it to the VFS by typing:
+
+mount fat ramdisk /myramdisk
+
+This will mount the FAT filesystem (The ramdisk automatically
+formats itself with this fs on init) on ramdisk and
+assign it to the directory /myramdisk. You may copy files
+to and from the ramdisk like any other device.
+
+You can also specify the number of blocks to allocate. The 
+following command allocates 9000 512 byte blocks:
+
+loadmod ramdisk.dll -blocks 9000
+
+To create multiple instances of the ramdisk you must assign
+a different device name, like:
+
+loadmod ramdisk.dll -name ramdisk2
+
+and then mount it accordingly like this:
+
+mount fat ramdisk2 /myramdisk2
+
+
+=============================================================
+For any bug or problem concerning this module,
+contact the author at jedld@sourceforge.net.
