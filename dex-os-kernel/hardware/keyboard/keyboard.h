@@ -26,6 +26,16 @@
 #define	RAW1_NUM_LOCK		0x45
 #define	RAW1_DEL		0x53
 
+#define	RAW3_LEFT_CTRL		0x11
+#define	RAW3_LEFT_SHIFT		0x12
+#define	RAW3_CAPS_LOCK		0x14
+#define	RAW3_LEFT_ALT		0x19
+#define	RAW3_RIGHT_ALT		0x39
+#define	RAW3_RIGHT_CTRL		0x58
+#define	RAW3_RIGHT_SHIFT	0x59
+#define	RAW3_SCROLL_LOCK	0x5F
+#define	RAW3_NUM_LOCK		0x76
+#define	RAW3_DEL		0x64
 
 /*----------------------------------------------------------------------------
 SCANCODE CONVERSION
@@ -117,11 +127,12 @@ typedef struct _kb_hotkey_info {
 
 kb_hotkey_info *hotkey_list = 0;
 int kb_totalhotkeys = 0;
+int kb_current_set = 1;
 
 sync_sharedvar kb_busywait;
 
 void write_kbd(unsigned adr, unsigned data);
-static int set1_scancode_to_ascii(unsigned code);
+static int set_scancode_to_ascii(unsigned code,unsigned int code_set);
 void settogglebits(unsigned char b);
 static int inq(queue_t *q, unsigned int data);
 static int deq(queue_t *q, unsigned int *data);
@@ -134,6 +145,7 @@ int kb_dohotkey(WORD key, WORD status);
 int kb_addhotkey(WORD key,WORD status,void (*handler)());
 int kb_keypressed();
 int kb_dequeue(int *val);
+void kb_setleds(unsigned int keyboard_status);
 int kill_foreground();
 void  kbd_irq(void);
 static int read_kbd(void);
@@ -141,7 +153,6 @@ void keyboardflush();
 void write_kbd(unsigned adr, unsigned data);
 static int write_kbd_await_ack(unsigned val);
 static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat);
-static int set1_scancode_to_ascii(unsigned code);
 char pause();
 int kb_ready();
 char getch();

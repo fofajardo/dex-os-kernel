@@ -261,7 +261,7 @@ void sendbyte(int byte)
    volatile int msr;
    int tmo;
 
-   for (tmo = 0;tmo < 128*2;tmo++) {
+   for (tmo = 0; tmo < 128 * (context_switch_rate/100) ;tmo++) {
       msr = inportb(FDC_MSR);
       if ((msr & 0xc0) == 0x80) {
 	 outportb(FDC_DATA,byte);
@@ -277,7 +277,7 @@ int getbyte()
    volatile int msr;
    int tmo;
 
-   for (tmo = 0;tmo < 128*2;tmo++) {
+   for (tmo = 0;tmo < 128 * (context_switch_rate/100);tmo++) {
       msr = inportb(FDC_MSR);
       if ((msr & 0xd0) == 0xd0) {
 	 return inportb(FDC_DATA);
@@ -291,7 +291,7 @@ int getbyte()
 /* this waits for FDC command to complete */
 BOOL waitfdc(BOOL sensei)
 {
-   tmout = 100*2;   /* set timeout to 1 second */
+   tmout = 100*(context_switch_rate/100);   /* set timeout to 1 second */
 
    /* wait for IRQ6 handler to signal command finished */
    while (!done && tmout);
@@ -551,9 +551,7 @@ BOOL read_block(int block,BYTE *blockbuff,DWORD numblocks)
     
     if (getcache(blockbuff,block,numblocks)) 
     {return 1;};
-    
-    printf("fdc_rw()..");
-    
+   
     for (i=0;i<numblocks;i++)
     {
        res = 0;
@@ -578,8 +576,6 @@ BOOL read_block(int block,BYTE *blockbuff,DWORD numblocks)
       ofs += 512;
    
     };
-    
-   printf("done.\n"); 
    
    return res;
 }

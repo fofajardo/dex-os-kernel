@@ -24,7 +24,7 @@ void *malloc(unsigned int size)
     if (auxillary_malloc_base == 0)
     {
      
-        val = bsdmalloc(size);
+        val = dlmalloc(size);
  
     }
     else
@@ -51,7 +51,7 @@ void *realloc(void *ptr,unsigned int size)
       
     //Use the default realloc function if there is no other malloc functio available    
     if (auxillary_malloc_base == 0)
-        val = bsdrealloc(ptr,size);
+        val = dlrealloc(ptr,size);
     else
     if (ptr < auxillary_malloc_base)
     {
@@ -96,7 +96,7 @@ void free(void *ptr)
     //Use the default realloc function if there is no other malloc functio available
     if (auxillary_malloc_base == 0 || (DWORD)ptr < auxillary_malloc_base)
     {
-        bsdfree(ptr);
+        dlfree(ptr);
     }
     else
     {

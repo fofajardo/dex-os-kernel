@@ -31,8 +31,8 @@
 
 
 
-//timer set to switch to new task 200 times per second. (see time.h or time.c)
-int context_switch_rate=200; 
+//timer set to switch to new task 100 times per second. (see time.h or time.c)
+int context_switch_rate = 100; 
 char *scr_debug = (char*)0xb8000;
 
 int op_success;

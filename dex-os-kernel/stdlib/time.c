@@ -1,7 +1,7 @@
 DWORD time_count = 0,  //used to store the number of seconds since dex was booted
 aux_time2=0;   //since the OS has the timer set to interrupt 200 times a second
                //an auxillary counter is required so that it increments time_count
-               //if it reaches 200
+               //if it reaches 100 or 200 depending on context_switch_rate.
                
 int time_monthdays[12]= {0,31,59,90,120,151,181,212,243,273,304,334,365}; 
 
@@ -188,12 +188,10 @@ void delay(DWORD w)
    DWORD t1, cpuflags;
    storeflags(&cpuflags);
    stopints();
-   
-   t1 = ticks+w*2;
+   t1 = ticks + w * ( context_switch_rate / 100);
    restoreflags(cpuflags);
       
    while (ticks<t1);
-   
 
  };
 

@@ -59,7 +59,7 @@
 //#define DEBUG_BRIDGE
 //#define DEBUG_DEMANDCOMMIT
 //#define MEM_LEAK_CHECK
-#define DEBUG_MOUNT
+//#define DEBUG_MOUNT
 
 //Types that are commonly used in this operating system
 typedef unsigned short int WORD;

@@ -118,7 +118,7 @@ void  kbd_irq(void)
    dex32_stopints(&flags);
 /* read I/O port 60h to reset interrupt at 8042 keyboard controller chip */
 	scan_code = inportb(0x60);
-   c=set1_scancode_to_ascii(scan_code);
+    c=set_scancode_to_ascii(scan_code,kb_current_set);
 
 
    if (c!=-1)
@@ -208,34 +208,47 @@ static int write_kbd_await_ack(unsigned val)
 
 static int init_kbd(unsigned ss, unsigned typematic, unsigned xlat)
 {
-	while(read_kbd() != -1)
-		/* nothing */;
-/* disable keyboard before programming it */
-	write_kbd_await_ack(0xF5);
-/* disable PS/2 mouse, set SYS bit, and Enable Keyboard Interrupt... */
-	write_kbd(0x64, 0x60);
-/* ...and either disable or enable AT-to-XT keystroke conversion */
-	write_kbd(0x60, xlat ? 0x65 : 0x25);
-/* program desired scancode set */
-	write_kbd_await_ack(0xF0);
-	write_kbd_await_ack(ss);
-/* we want all keys to return both a make code (when pressed)
-and a break code (when released -- scancode set 3 only) */
-	if(ss == 3)
-	{
-		write_kbd_await_ack(0xFA);
-	}
-/* set typematic delay and rate */
-	write_kbd_await_ack(0xF3);
-	write_kbd_await_ack(typematic);
-/* enable keyboard */
-	write_kbd_await_ack(0xF4);
-	return 0;
+    	while(read_kbd() != -1)
+    		/* nothing */;
+    /* disable keyboard before programming it */
+    	write_kbd_await_ack(0xF5);
+    /* disable PS/2 mouse, set SYS bit, and Enable Keyboard Interrupt... */
+    	write_kbd(0x64, 0x60);
+    /* ...and either disable or enable AT-to-XT keystroke conversion */
+    	write_kbd(0x60, xlat ? 0x65 : 0x25);
+    /* program desired scancode set */
+    	write_kbd_await_ack(0xF0);
+    	write_kbd_await_ack(ss);
+    /* we want all keys to return both a make code (when pressed)
+    and a break code (when released -- scancode set 3 only) */
+    	if(ss == 3)
+    	{
+    		write_kbd_await_ack(0xFA);
+    	}
+    /* set typematic delay and rate */
+    	write_kbd_await_ack(0xF3);
+    	write_kbd_await_ack(typematic);
+    /* enable keyboard */
+    	write_kbd_await_ack(0xF4);
+    	return 0;
 }
 
+void kb_setleds(unsigned int keyboard_status)
+{
+        unsigned int temp;
+    	write_kbd(0x60, 0xED);	/* "set LEDs" command */
+    	temp = 0;
+		if(keyboard_status & KBD_META_SCRL)
+			temp |= 1;
+		if(keyboard_status & KBD_META_NUM)
+			temp |= 2;
+		if(keyboard_status & KBD_META_CAPS)
+			temp |= 4;
+		write_kbd(0x60, temp);	/* bottom 3 bits set LEDs */
+    
+};
 
-
-static int set1_scancode_to_ascii(unsigned code)
+static int set_scancode_to_ascii(unsigned code,unsigned int code_set)
 {
 	static const unsigned char map[] =
 	{
@@ -257,6 +270,7 @@ static int set1_scancode_to_ascii(unsigned code)
 /* 50 */KEY_DN,	KEY_PGDN,KEY_INS,KEY_DEL,0,	0,	0,	KEY_F11,
 /* 58 */KEY_F12
 	};
+	
 	static const unsigned char shift_map[] =
 	{
 /* 00 */0,	0x1B,	'!',	'@',	'#',	'$',	'%',	'^',
@@ -277,18 +291,77 @@ static int set1_scancode_to_ascii(unsigned code)
 /* 50 */KEY_DN,	KEY_PGDN,KEY_INS,KEY_DEL,0,	0,	0,	KEY_F11,
 /* 58 */KEY_F12
 	};
+	
+	static const unsigned char map3[] =
+	{
+/* 00 */0,	0,	0,	0,	0,	0,	0,	KEY_F1,
+/* 08 */0x1B,	0,	0,	0,	0,	0x09,	'~',	KEY_F2,
+/* 11 is left Ctrl; 12 is left Shift; 14 is CapsLock */
+/* 10 */0,	0,	0,	0,	0,	'q',	'!',	KEY_F3,
+/* 19 is left Alt */
+/* 18 */0,	0,	'z',	's',	'a',	'w',	'@',	KEY_F4,
+/* 20 */0,	'c',	'x',	'd',	'e',	'$',	'#',	KEY_F5,
+/* 28 */0,	' ',	'v',	'f',	't',	'r',	'%',	KEY_F6,
+/* 30 */0,	'n',	'b',	'h',	'g',	'y',	'^',	KEY_F7,
+/* 39 is right Alt */
+/* 38 */0,	0,	'm',	'j',	'u',	'&',	'*',	KEY_F8,
+/* 40 */0,	'<',	'k',	'i',	'o',	')',	'(',	KEY_F9,
+/* 48 */0,	'>',	'?',	'l',	':',	'p',	'_',	KEY_F10,
+/* 50 */0,	0,	'"',	0,	'{',	'+',	KEY_F11,KEY_PRNT,
+/* 58 is right Ctrl; 59 is right Shift; 5F is Scroll Lock */
+/* 58 */0,	0,	0x0D,	'}',	'|',	0,	KEY_F12,0,
+/* 60 */KEY_DN,	KEY_LFT,KEY_PAUSE,KEY_UP,KEY_DEL,KEY_END,0x08,	KEY_INS,
+/* 68 */0,	'1',	KEY_RT,	'4',	'7',	KEY_PGDN,KEY_HOME,KEY_PGUP,
+/* 76 is Num Lock */
+/* 70 */'0',	'.',	'2',	'5',	'6',	'8',	0,	'/',
+/* 78 */0,	0x0D,	'3',	0,	'+',	'9',	'*',	0,
+/* 80 */0,	0,	0,	0,	'-',	0,	0,	0,
+/* 88 */0,	0,	0,	KEY_LWIN,KEY_RWIN,KEY_MENU,0,	0
+	};
+	
+	static const unsigned char shift_map3[] =
+	{
+/* 00 */0,	0,	0,	0,	0,	0,	0,	KEY_F1,
+/* 08 */0x1B,	0,	0,	0,	0,	0x09,	'`',	KEY_F2,
+/* 10 */0,	0,	0,	0,	0,	'Q',	'1',	KEY_F3,
+/* 18 */0,	0,	'Z',	'S',	'A',	'W',	'2',	KEY_F4,
+/* 20 */0,	'C',	'X',	'D',	'E',	'4',	'3',	KEY_F5,
+/* 28 */0,	' ',	'V',	'F',	'T',	'R',	'5',	KEY_F6,
+/* 30 */0,	'N',	'B',	'H',	'G',	'Y',	'6',	KEY_F7,
+/* 38 */0,	0,	'M',	'J',	'U',	'7',	'8',	KEY_F8,
+/* 40 */0,	',',	'K',	'I',	'O',	'0',	'9',	KEY_F9,
+/* 48 */0,	'.',	'/',	'L',	';',	'P',	'-',	KEY_F10,
+/* 50 */0,	0,	'\'',	0,	'[',	'=',	KEY_F11,KEY_PRNT,
+/* 58 */0,	0,	0x0D,	']',	'\\',	0,	KEY_F12,0,
+/* 60 */KEY_DN,	KEY_LFT,KEY_PAUSE,KEY_UP,KEY_DEL,KEY_END,0x08,	KEY_INS,
+/* 68 */0,	KEY_END,KEY_RT,	KEY_LFT,KEY_HOME,KEY_PGDN,KEY_HOME,KEY_PGUP,
+/* 70 */KEY_INS,KEY_DEL,KEY_DN,	'5',	KEY_RT,	KEY_UP,	0,	'/',
+/* 78 */0,	0x0D,	KEY_PGDN,0,	'+',	KEY_PGUP,'*',	0,
+/* 80 */0,	0,	0,	0,	'-',	0,	0,	0,
+/* 88 */0,	0,	0,	KEY_LWIN,KEY_RWIN,KEY_MENU,0,	0
+	};
+
 	static unsigned saw_break_code;
 /**/
 	unsigned temp;
 
 /* check for break code (i.e. a key is released) */
-	if(code >= 0x80)
+	//set 1
+    if(code >= 0x80 && code_set == 1)
 	{
 		saw_break_code = 1;
 		code &= 0x7F;
 	}
+	
+	//set 3
+	if(code == 0xF0 && code_set == 3)
+	{
+		saw_break_code = 1;
+		return -1;
+	}
+	
 /* the only break codes we're interested in are Shift, Ctrl, Alt */
-	if(saw_break_code)
+	if(saw_break_code && code_set == 1)
 	{
 		if(code == RAW1_LEFT_ALT || code == RAW1_RIGHT_ALT)
 			kbd_status &= ~KBD_META_ALT;
@@ -299,54 +372,105 @@ static int set1_scancode_to_ascii(unsigned code)
 		saw_break_code = 0;
 		return -1;
 	}
+	
+	if(saw_break_code && code_set == 3 )
+	{
+		if(code == RAW3_LEFT_ALT || code == RAW3_RIGHT_ALT)
+			kbd_status &= ~KBD_META_ALT;
+		else if(code == RAW3_LEFT_CTRL || code == RAW3_RIGHT_CTRL)
+			kbd_status &= ~KBD_META_CTRL;
+		else if(code == RAW3_LEFT_SHIFT || code == RAW3_RIGHT_SHIFT)
+			kbd_status &= ~KBD_META_SHIFT;
+		saw_break_code = 0;
+		return -1;
+	}
 
 /* it's a make code: check the "meta" keys, as above */
-	if(code == RAW1_LEFT_ALT || code == RAW1_RIGHT_ALT)
+    if (code_set == 1)
+    {
+        	if(code == RAW1_LEFT_ALT || code == RAW1_RIGHT_ALT)
+        	{
+        		kbd_status |= KBD_META_ALT;
+        		return -1;
+        	}
+        	if(code == RAW1_LEFT_CTRL || code == RAW1_RIGHT_CTRL)
+        	{
+        		kbd_status |= KBD_META_CTRL;
+        		return -1;
+        	}
+        	if(code == RAW1_LEFT_SHIFT || code == RAW1_RIGHT_SHIFT)
+        	{
+        		kbd_status |= KBD_META_SHIFT;
+        		return -1;
+        	}
+	};
+	
+	if (code_set == 3)
 	{
-		kbd_status |= KBD_META_ALT;
-		return -1;
-	}
-	if(code == RAW1_LEFT_CTRL || code == RAW1_RIGHT_CTRL)
-	{
-		kbd_status |= KBD_META_CTRL;
-		return -1;
-	}
-	if(code == RAW1_LEFT_SHIFT || code == RAW1_RIGHT_SHIFT)
-	{
-		kbd_status |= KBD_META_SHIFT;
-		return -1;
-	}
-
-
+        	if(code == RAW3_LEFT_ALT || code == RAW3_RIGHT_ALT)
+        	{
+        		kbd_status |= KBD_META_ALT;
+        		return -1;
+        	}
+        	if(code == RAW3_LEFT_CTRL || code == RAW3_RIGHT_CTRL)
+        	{
+        		kbd_status |= KBD_META_CTRL;
+        		return -1;
+        	}
+        	if(code == RAW3_LEFT_SHIFT || code == RAW3_RIGHT_SHIFT)
+        	{
+        		kbd_status |= KBD_META_SHIFT;
+        		return -1;
+        	}
+	};
 /* Scroll Lock, Num Lock, and Caps Lock set the LEDs. These keys
 have on-off (toggle or XOR) action, instead of momentary action */
-	if(code == RAW1_SCROLL_LOCK)
-	{
-		kbd_status ^= KBD_META_SCRL;
-		goto LEDS;
-	}
-	if(code == RAW1_NUM_LOCK)
-	{
-		kbd_status ^= KBD_META_NUM;
-		goto LEDS;
-	}
-	if(code == RAW1_CAPS_LOCK)
-	{
-		kbd_status ^= KBD_META_CAPS;
-LEDS:		write_kbd(0x60, 0xED);	/* "set LEDs" command */
-		temp = 0;
-		if(kbd_status & KBD_META_SCRL)
-			temp |= 1;
-		if(kbd_status & KBD_META_NUM)
-			temp |= 2;
-		if(kbd_status & KBD_META_CAPS)
-			temp |= 4;
-		write_kbd(0x60, temp);	/* bottom 3 bits set LEDs */
-		return -1;
+    if (code_set == 1)
+    {
+        	if(code == RAW1_SCROLL_LOCK)
+        	{
+        		kbd_status ^= KBD_META_SCRL;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+        	if(code == RAW1_NUM_LOCK)
+        	{
+        		kbd_status ^= KBD_META_NUM;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+        	
+        	if(code == RAW1_CAPS_LOCK)
+        	{
+        		kbd_status ^= KBD_META_CAPS;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	};
 	};
-	    
 	
-    if ( (kbd_status & KBD_META_ALT) && (kbd_status & KBD_META_CTRL))
+	if (code_set == 3)
+	{
+        	if(code == RAW3_SCROLL_LOCK)
+        	{
+        		kbd_status ^= KBD_META_SCRL;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+        	if(code == RAW3_NUM_LOCK)
+        	{
+        		kbd_status ^= KBD_META_NUM;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+        	if(code == RAW3_CAPS_LOCK)
+        	{
+        		kbd_status ^= KBD_META_CAPS;
+        		kb_setleds(kbd_status);
+        		return -1;
+        	}
+	};    
+	
+    if ( (kbd_status & KBD_META_ALT) && (kbd_status & KBD_META_CTRL) && code_set == 1 )
         {
       		if(code >= sizeof(shift_map) / sizeof(shift_map[0]))
 			return -1;
@@ -362,9 +486,20 @@ LEDS:		write_kbd(0x60, 0xED);	/* "set LEDs" command */
 /* convert A-Z[\]^_ to control chars */
 	if(kbd_status & KBD_META_CTRL)
 	{
-		if(code >= sizeof(map) / sizeof(map[0]))
-			return -1;
-		temp = map[code];
+	    if (code_set == 1)
+	    {
+        	if(code >= sizeof(map) / sizeof(map[0]))
+    			return -1;
+    		temp = map[code];
+		}
+		else
+		if (code_set == 3)
+		{
+        	if(code >= sizeof(map3) / sizeof(map3[0]))
+   			return -1;
+    		temp = map3[code];
+		};
+		
 		if(temp >= 'a' && temp <= 'z')
 			return temp - 'a';
 		if(temp >= '[' && temp <= '_')
@@ -375,32 +510,58 @@ LEDS:		write_kbd(0x60, 0xED);	/* "set LEDs" command */
 	if(kbd_status & KBD_META_SHIFT)
 	{
 /* ignore invalid scan codes */
-		if(code >= sizeof(shift_map) / sizeof(shift_map[0]))
-			return -1;
-		temp = shift_map[code];
+	    if (code_set == 1)
+	    {
+    		if(code >= sizeof(shift_map) / sizeof(shift_map[0]))
+    			return -1;
+    		temp = shift_map[code];
+		}
+		else
+		if (code_set == 3)
+		{
+        	if(code >= sizeof(shift_map3) / sizeof(shift_map3[0]))
+   			return -1;
+    		temp = shift_map3[code];
+		};
+
 /* defective keyboard? non-US keyboard? more than 104 keys? */
 		if(temp == 0)
 			return -1;
 /* caps lock? */
 		if(kbd_status & KBD_META_CAPS)
 		{
-			if(temp >= 'A' && temp <= 'Z')
+			if(temp >= 'A' && temp <= 'Z' && code_set ==1)
 				temp = map[code];
+			else
+			    temp == map3[code];
 		}
 	}
 	else
 	{
-		if(code >= sizeof(map) / sizeof(map[0]))
-			return -1;
-		temp = map[code];
+	    if (code_set == 1)
+	    {
+    		if(code >= sizeof(map) / sizeof(map[0]))
+    			return -1;
+    		temp = map[code];
+		}
+		else
+		{
+    		if(code >= sizeof(map) / sizeof(map3[0]))
+    			return -1;
+    		temp = map3[code];
+		};
+		
 		if(temp == 0)
 			return -1;
 		if(kbd_status & KBD_META_CAPS)
 		{
-			if(temp >= 'a' && temp <= 'z')
+			if(temp >= 'a' && temp <= 'z' && code_set == 1)
 				temp = shift_map[code];
+			else
+			   temp =shift_map3[code];
 		}
 	}
+	
 	return temp;
 };
 
@@ -665,7 +826,7 @@ void init_keyboard()
     //assign the keyboard wrapper to IRQ 1
     irq_addhandler(devid,1,kbd_irq);
     
-    init_kbd(1,3,0);
+    init_kbd(kb_current_set,3,0);
 
     hotkey_list = 0;
 };
