@@ -48,6 +48,7 @@ extern int multiboothdr;
 #include "stdlib\dexstdlib.h"
 #include "startup\multiboot.h"
 #include "memory\dexmem.h"
+#include "memory\kheap.h"
 #include "console\dex_DDL.h"
 #include "vfs\vfs_core.h"
 #include "process\process.h"
@@ -58,6 +59,7 @@ extern int multiboothdr;
 #include "hardware\keyboard\keyboard.h"
 #include "hardware\hardware.h"
 #include "hardware\chips\ports.c"
+#include "hardware\vga\dexvga.h"
 #include "hardware\vga\dexvga.c"
 #include "hardware\floppy\floppy.h"
 #include "hardware\ATA\ataio.h"
@@ -77,7 +79,6 @@ extern int multiboothdr;
 #include "process\scheduler.h"
 #include "console\script.h"
 #include "vfs\vfs_aux.h"
-#include "memory\kheap.h"
 #include "iomgr\iosched.h"
 
 typedef struct _kernel_sysinfo {
