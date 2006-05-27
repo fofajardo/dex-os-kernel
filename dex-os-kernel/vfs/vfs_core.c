@@ -451,14 +451,14 @@ int vfs_setbuffer(file_PCB *handle,char *buffer,int bufsize,int mode)
 
 };
 
-int vfs_checkdirused(vfs_node *ptr)
+int vfs_checkdirused(vfs_node *vfs_ptr)
 {
     PCB386 *ptr;
     int total = get_processlist(&ptr), i;
     
     for (i=0; i < total ;i++)
     {
-        if (ptr[i].workdir == ptr )
+        if (ptr[i].workdir == vfs_ptr )
                return 1; 
     };
     return 0;
@@ -619,6 +619,7 @@ int vfs_mount_device(const char *fsname,const char *devname,const char *location
             
         if (mount_location == 0) //create directory
         {
+
             mount_location = mkvirtualdir(location,fsid,devid);
         }
             else
@@ -1337,7 +1338,7 @@ void findfile(char *name)
     };
 };
 
-vfs_node *mkvirtualdir(const char *name,int fsid,int deviceid)
+vfs_node *mkvirtualdir(char *name,int fsid,int deviceid)
 {
     vfs_node *destdir; //obtain the destination directory
     vfs_node *node,*rollback;
