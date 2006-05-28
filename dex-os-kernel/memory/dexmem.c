@@ -97,7 +97,10 @@ void mempush(DWORD mem)
 {
 //make sure that the physcial memory location pushed is within
 //the range of the computer's physical memory
-if ( ((DWORD)stackbase + 0x100000 >= mem) && (mem < memamount-0x1000) )
+DWORD low = (DWORD)stackbase + 0x100000;
+DWORD high = memamount-0x1000;
+
+if ( ( low <= mem) && (mem < high) )
    {
     stackbase[0]++;
     stackbase[stackbase[0]]=mem;
@@ -105,7 +108,7 @@ if ( ((DWORD)stackbase + 0x100000 >= mem) && (mem < memamount-0x1000) )
      else
    { 
    char temp[255]; 
-   printf("memory manager: An invalid value (%s) was tried to be added to the\n");
+   printf("memory manager: An invalid value (%016x) was tried to be added to the\n",mem);
    printf("memory manager: free physical pages list.\n");    
    };
 };
