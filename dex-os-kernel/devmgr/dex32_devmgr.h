@@ -338,7 +338,7 @@ int  devmgr_getcontext();
 int  devmgr_getfunction();
 int  devmgr_getlock(int devicehandle);
 char *devmgr_getname(int deviceid);
-char *devmgr_identify(int type,char *buf);
+char *devmgr_identify(int type,char *buf,int length);
 void devmgr_init();
 int  devmgr_register(devmgr_generic *);
 int  devmgr_removedevice(int deviceid);

@@ -196,48 +196,48 @@ return retval;
 };
 
 //returns the string identifying the type of device
-char *devmgr_identify(int type,char *buf)
+char *devmgr_identify(int type,char *buf,int length)
 {
             if (type == DEVMGR_UNKNOWN)
-                        strcpy(buf,"Unknown");
+                        strncpy(buf,"Unknown",length);
                         else
             if (type == DEVMGR_FS)
-                        strcpy(buf,"Filesystem");
+                        strncpy(buf,"Filesystem",length);
                         else
             if (type == DEVMGR_DEV)
-                        strcpy(buf,"Device Driver");
+                        strncpy(buf,"Device Driver",length);
                         else
             if (type == DEVMGR_EXT)
-                        strcpy(buf,"Extension");
+                        strncpy(buf,"Extension",length);
                         else
             if (type == DEVMGR_BLOCK)
-                        strcpy(buf,"Block device");
+                        strncpy(buf,"Block device",length);
                         else
             if (type == DEVMGR_SERVICE || type == DEVMGR_STDLIB)
-                        strcpy(buf,"Kernel Service");
+                        strncpy(buf,"Kernel Service",length);
                         else
             if (type == DEVMGR_PORTMGR)
-                        strcpy(buf,"port manager");
+                        strncpy(buf,"port manager",length);
                         else
             if (type == DEVMGR_IOMGR)
-                        strcpy(buf,"I/O manager");
+                        strncpy(buf,"I/O manager",length);
                         else
             if (type == DEVMGR_MEM)
-                        strcpy(buf,"memory manager");
+                        strncpy(buf,"memory manager",length);
                         else
             if (type == DEVMGR_PROCESSMGR)
-                        strcpy(buf,"process manager");
+                        strncpy(buf,"process manager",length);
                         else
             if (type == DEVMGR_CHAR)
-                        strcpy(buf,"character device");
+                        strncpy(buf,"character device",length);
                         else
             if (type == DEVMGR_SYSCALL)
-                        strcpy(buf,"System call manager");
+                        strncpy(buf,"System call manager",length);
                         else
             if (type >= 1000)
-            				strcpy(buf,"Kernel Extension");
+            				strncpy(buf,"Kernel Extension",length);
                         else
-                        strcpy(buf,"Unknown");
+                        strncpy(buf,"Unknown",length);
 return buf;
 };
 
@@ -275,14 +275,14 @@ void devmgr_showdevices()
       {
             if (devmgr_devlist[i]!=0)
             {
-                char typestr[10];
-                strcpy(typestr,devmgr_identify(devmgr_devlist[i]->type,typestr));
+                char typestr[20];
+                strcpy(typestr,devmgr_identify(devmgr_devlist[i]->type,typestr,20));
                 
                 if (devmgr_statuslist[i].locked)
                     textcolor(RED);
                 else
                     textcolor(WHITE);
-                    
+                  
                 printf("%-5d %-15s %-15s %-30s\n",devmgr_devlist[i]->id,
                                   devmgr_devlist[i]->name,typestr,
                                   devmgr_devlist[i]->description);
