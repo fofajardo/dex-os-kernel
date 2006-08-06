@@ -38,6 +38,26 @@ extern _pcibios
 
 SECTION .text
 
+;int testandset(DWORD *ptr)
+global _testandset
+_testandset:
+    push ebp
+    mov ebp,esp
+    push ebx
+    pushf
+    mov eax,1
+    mov ebx,[ebp+8]
+    bts dword [ebx],0
+;if old value is one then return 1
+    jc _end_tst
+;if old value is 0 then return 0
+    mov eax,0         
+_end_tst:
+    popf     
+    pop ebx
+    pop ebp
+    ret        
+
 ;int pci_finddevice(WORD deviceid,WORD vendorid, WORD index,char ;*busnumber, WORD *devnumber)
 
 global _pci_finddevice

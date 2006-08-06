@@ -9,11 +9,14 @@
 #define SYNC_H
 
 typedef struct _sync_sharedvar {
-    int busy;
+    char owner[50];    
+    int busyflag;
+    int pid;
     int ready;
     int wait;
 } sync_sharedvar;
 
+extern int testandset(DWORD *ptr);
 void sync_entercrit(sync_sharedvar *var);
 void sync_leavecrit(sync_sharedvar *var);
 

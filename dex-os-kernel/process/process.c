@@ -1509,7 +1509,7 @@ void process_init()
     printf("process manager: done.\n");
 #endif
 
-    processmgr_busy.busy = 0;
+    processmgr_busy.busyflag = 0;
     processmgr_busy.wait = 0;
     
     printf("starting process manager...\n");
