@@ -26,7 +26,7 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
   
 */
-#ifdef _MODULE_H_
+#ifndef _MODULE_H_
 #define _MODULE_H_
 
 #define LOADERMAX 20

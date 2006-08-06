@@ -57,6 +57,7 @@ int lib_nextid=1;
 #include "pe_module.c"
 #include "elf_module.c"
 #include "b32.c"
+#include "java_nativevm/java_classloader.c"
 
 
 
@@ -94,7 +95,8 @@ void dex32_initloader()
     dex32_registerloader(coff_loadusermodule); /*a.out type executables */	
     dex32_registerloader(pe_loadusermodule);   /*WIN32 PE executables   */
     dex32_registerloader(elf_loadmodule);      /*Linux elf executables  */	
-    dex32_registerloader(b32_loadusermodule); /*DEX32 standard binary fomat*/    
+    dex32_registerloader(b32_loadusermodule); /*DEX32 standard binary fomat*/   
+    dex32_registerloader(java_loadusermodule); /*Sun Java class format*/ 
   };
 
 int dex32_loader(char *name,char *image,char *loadaddress,int mode,char *p,char *workdir,PCB386 *parent)
