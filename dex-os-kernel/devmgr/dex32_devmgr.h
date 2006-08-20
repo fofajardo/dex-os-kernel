@@ -346,6 +346,7 @@ int  devmgr_sendmessage(int deviceid,int type,DWORD message);
 void devmgr_setcontext(int deviceid);
 void devmgr_setfunction(int fxn);
 int  devmgr_setlock(int devicehandle,int val);
+void devmgr_showdevices();
 void *devmgr_tweak_by_ID(int deviceid, int function_index, void *new_function);
 void *devmgr_tweak_by_addr(devmgr_generic *mydev, void **target_function, void *new_function);
 
