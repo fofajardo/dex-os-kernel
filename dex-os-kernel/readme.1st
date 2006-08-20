@@ -73,3 +73,44 @@ documentation for instructions on installing the GRUB bootloader on a FAT12
 floppy disk.
 
 See the user's manual for other details.
+
+EDIT: kernel32.bin is now compressed using gzip therefore the file
+should now be kernel32.bin.gz. The modification is relfected in the GRUB
+configuration file.
+
+COMPILING THE SOURCE CODE
+=========================
+For Windows/DOS
+nasmw - netwide free assember 0.98 or greater
+DJGPP gcc - The gcc compiler from DJ Delories
+gzip - gzip compression utility
+
+Simply invoke the make-kernel.bat batch file.
+
+For Unix systems
+The following utilities must be available
+nasm - netwide free assembler 0.98 or greater
+gcc - GNU C compiler and associated utilities
+gzip - gzip compression utility
+make - make file
+
+There is an included makefile in the source, to compile just invoke
+make. 
+
+POSSIBLE ERRORS
+===============
+
+Error: ld returns the following error message:
+   		   
+ld: PE operations on non PE file. 
+
+Reason:
+	   
+The version of gcc or ld is not capable of producing BINARY
+output formats. You must obtain the cross compiler capable
+version of gcc and/or ld to be able to link the object files
+together. Check using ld --help to determine the supported
+output formats.
+
+DJGPP is capable of producing BINARY formats out
+of the box.
