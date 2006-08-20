@@ -333,6 +333,7 @@ int kb_addhotkey(WORD key,WORD status,void (*handler)());
 int kb_keypressed();
 int kb_dequeue(int *val);
 void kb_setleds(unsigned int keyboard_status);
+void keyboard_wait();
 int kill_foreground();
 void  kbd_irq(void);
 static int read_kbd(void);
