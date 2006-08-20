@@ -274,6 +274,7 @@ int choice = 0;
 
  while(1)
     {
+        sleep(50);
         if (fg_state)
         {
         dd_swaptomemory(fg_out);
@@ -287,6 +288,7 @@ int choice = 0;
         fg_showmenu(choice);
         
         dd_swaptohardware(fg_out);
+        
         if (kb_keypressed())
         {
            unsigned char c = getch();
