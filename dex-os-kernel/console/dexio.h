@@ -106,7 +106,7 @@ int vDDLprintf(DEX32_DDL_INFO **dev,const char *fmt,va_list args);
 int DDLprintf(DEX32_DDL_INFO **dev, const char *fmt, ...);
 void textcolor(unsigned char c);
 void textbackground(unsigned char c);
-void update_curosr(int y,int x);
+void update_cursor(int y,int x);
 void scrollup();
 void nextln();
 
