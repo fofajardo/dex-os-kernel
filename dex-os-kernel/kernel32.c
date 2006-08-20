@@ -29,6 +29,7 @@
 #define USE_CONSOLEDDL
 
 
+
 //timer set to switch to new task 100 times per second. (see time.h or time.c)
 int context_switch_rate = 100; 
 char *scr_debug = (char*)0xb8000;
@@ -46,6 +47,7 @@ extern int multiboothdr;
 #include "process\sync.h"
 #include "stdlib\time.h"
 #include "stdlib\dexstdlib.h"
+#include "stdlib\qsort.h"
 #include "startup\multiboot.h"
 #include "memory\dexmem.h"
 #include "memory\kheap.h"
@@ -91,8 +93,8 @@ kernel_sysinfo kernel_systeminfo;
 //This stores the current virtual console the kernel will use
 DEX32_DDL_INFO *consoleDDL;
 char *dex32_versionstring="DEX Extensible Operating System, project \"Chameleon\" \
-\nVersion 1.034 build April 9 2004\n \
-Copyright (C) 2004  Joseph Emmanuel DL Dayo\n \
+\nVersion 1.035 build July 6 2006\n \
+Copyright (C) 2006  Joseph Emmanuel DL Dayo\n \
 Developed as a requirement for CMSC 190 at the Institute of Computer Science\n \
 University of the Philippines, Los Baños.\n\n \
 This program is free software; you can redistribute it and/or modify\n \
@@ -163,7 +165,7 @@ multiboot_header *mbhdr = 0;
 char *startup_parameters = 0;
 
 
-void main()
+int main()
 {
 
     char temp[255];
@@ -253,7 +255,7 @@ void dex32_startup()
     textcolor(YELLOW);
     printf("DEX");
     textcolor(WHITE);
-    printf("%-76s\n"," Extensible Operating System v.1.034 Beta project \"Chameleon\"");
+    printf("%-76s\n"," Extensible Operating System v.1.035 Beta project \"Chameleon\"");
     textcolor(WHITE);
     textbackground(BLACK);
     printf("BUILD May 16 2004\n");
@@ -332,7 +334,7 @@ void dex_kernel32()
     printf("   ------- Welcome! DEX operating system kernel initialized -------\n");
     printf("   press <spacebar> to skip startup script file ...\n");
     textcolor(WHITE);
-    
+
     
     //initialize the keyboard device driver
     init_keyboard();
@@ -432,6 +434,7 @@ void dex_kernel32()
 
     //Initialize the PCI bus driver
     init_pci();
+    
 
     printf("dex32_startup(): Running foreground manager thread..\n");
     
