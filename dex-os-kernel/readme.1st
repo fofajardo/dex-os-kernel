@@ -80,7 +80,9 @@ configuration file.
 
 COMPILING THE SOURCE CODE
 =========================
+
 For Windows/DOS
+---------------
 nasmw - netwide free assember 0.98 or greater
 DJGPP gcc - The gcc compiler from DJ Delories
 gzip - gzip compression utility
@@ -88,6 +90,7 @@ gzip - gzip compression utility
 Simply invoke the make-kernel.bat batch file.
 
 For Unix systems
+----------------
 The following utilities must be available
 nasm - netwide free assembler 0.98 or greater
 gcc - GNU C compiler and associated utilities
@@ -96,6 +99,14 @@ make - make file
 
 There is an included makefile in the source, to compile just invoke
 make. 
+
+This will output kernel32.bin.gz which contains the compressed
+dex-os kernel. This kernel can be booted by placing
+the kernel32.bin.gz file in a floppy disk with grub installed
+and modifying the menu.lst file to reflect the location of
+kernel32.bin.gz (A menu.lst file is included in the source
+package as well as the GRUB loaders in the GRUB folder)
+
 
 POSSIBLE ERRORS
 ===============
