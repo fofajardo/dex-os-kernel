@@ -3,7 +3,7 @@
 /* qsort.c	*/
 /* ============ */
 #include <assert.h>
-
+#include "qsort.h"
 /*
  * This is an implementation of quicksort that partitions the array
  * to be sorted into three segments:
@@ -35,15 +35,7 @@
 
 typedef	unsigned long	ULONG;
 
-/* ------------------- */
-/* FUNCTION PROTOTYPES */
-/* ------------------- */
-# undef F
-# if defined(__STDC__) || defined(__PROTO__)
-#	define	F( P )	P
-# else
-#	define	F( P )	()
-# endif
+
 /* INDENT OFF */
 
 PRIVATE	void	InsertionSort F((ULONG First, ULONG Last));

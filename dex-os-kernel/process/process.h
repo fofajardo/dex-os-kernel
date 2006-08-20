@@ -265,6 +265,7 @@ DWORD   createprocess(void *ptr,char *name,
                      char *workdir,
                      PCB386 *parent);
 DWORD   createthread(void *ptr,void *stack,DWORD stacksize);
+void 	copyprocessmemory(process_mem *memptr,process_mem **destmemptr);
 DWORD   dex32_exitprocess(DWORD ret_value);
 int     dex32_getname(DWORD processid,int bufsize,char *s);
 void    dex32_getparametersinfo(char *buf);
@@ -292,6 +293,7 @@ DWORD   get_semaphore(DWORD handle);
 DWORD   kill_children(DWORD processid);
 DWORD   kill_process(DWORD processid);
 DWORD   kill_thread(PCB386 *ptr);
+void 	ps_shutdown();
 DWORD   set_semaphore(DWORD handle,DWORD val);
 int     sendmessage(DWORD pid,DWORD mes,DWORD data);
 int     sendmessageEX(DWORD source,DWORD pid,DWORD mes,DWORD data);
@@ -309,8 +311,10 @@ DWORD   ps_dequeue(PCB386 *process);
 DWORD   ps_enqueue(PCB386 *process);
 PCB386 *ps_getcurrentprocess();
 void    ps_user_kill(int pid);
+void 	show_process_stat(int pid);
 void    signal(DWORD sigtype,void* ptr);
 void    systemcall();
+void 	taskswitch();
 //process manager initialization function
 void    process_init();
 #endif

@@ -22,6 +22,7 @@ typedef int clock_t; //for UNIX compatibility
 dex32_datetime time_systime;
 
 char *datetostr(dex32_datetime *d,char *str);
+void delay(DWORD w); //delays the execution of a program for a specified number of milliseconds
 void getdatetime(dex32_datetime*); //gets the date nd time
 void dex32_set_timer(DWORD rate);
 int time();
