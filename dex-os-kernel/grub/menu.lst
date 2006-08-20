@@ -1,4 +1,4 @@
  # Entry 0:
-        title   DEX 1.00SP Operating System
+        title   DEX Extensible Operating System 1.03
         root    (fd0)
-        kernel  /kernel32.bin
+        kernel  /kernel32.bin.gz
