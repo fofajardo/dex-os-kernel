@@ -26,6 +26,7 @@
 void hardware_printinfo(hardware_cpuinfo *cpuinfo)
 {
     DWORD f;
+    DWORD ef;
     int isAMDcpu = 0;
     printf("Manufacturer    : %s\n",cpuinfo->manufacturer);
     printf("Product String  : %s\n",cpuinfo->modelstring);
@@ -39,6 +40,7 @@ void hardware_printinfo(hardware_cpuinfo *cpuinfo)
     if (strcmp(cpuinfo->manufacturer,"AuthenticAMD")==0) isAMDcpu = 1;
     
     f = cpuinfo->feature;
+    ef = cpuinfo->e_feature;
     if ( f & CPUFEATURE_FPU) printf("* FPU\n");
     if ( f & CPUFEATURE_VME) printf("* Virtual Mode Extensions\n");
     if ( f & CPUFEATURE_DE)  printf("* Debugging Extensions\n");
@@ -72,6 +74,7 @@ void hardware_printinfo(hardware_cpuinfo *cpuinfo)
     if ( f & CPUFEATURE_3DNOW && isAMDcpu) printf("* AMD 3Dnow!\n");
     if ( f & CPUFEATURE_3DNOWEXT && isAMDcpu) printf("* AMD Extended 3Dnow!\n");
     if ( f & CPUFEATURE_HTT) printf("* HyperThreading Technology\n");
+    if ( ef & CPUFEATURE_NXE) printf("* No-eXEcute bit available\n");
     printf("\n");
 
 };
@@ -94,6 +97,11 @@ void hardware_getcpuinfo(hardware_cpuinfo *cpuinfo)
     cpuinfo->model =    (type & 0xF0)  >> 4;
     cpuinfo->family =   (type & 0xF00) >> 8;
     cpuinfo->type =     (type & 0x3000) >> 12;  
+    getcpuid(0x80000001,&hw.a,&hw.b,&hw.c,&hw.d);
+    //Check if the No-eXEcute bit is available
+    if (hw.d & 0x100000) {
+       cpuinfo->e_feature |= CPUFEATURE_NXE;
+    };
 };
 
 void getcpubrand(char *s)

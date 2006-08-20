@@ -59,6 +59,7 @@
 #define CPUFEATURE_3DNOW    2147483648 
 #define CPUFEATURE_3DNOWEXT 1073741824
 #define CPUFEATURE_AA64      536870912
+#define CPUFEATURE_NXE       1048576
 
 typedef struct _hardwareinfo {
  DWORD a,b,c,d,p;
@@ -70,6 +71,7 @@ char  manufacturer[13]; //The manufacturer of the CPU
 char  modelstring[49];  //The name of the CPU assigned by the manufacturer e.g. "Pentium(r)"
 DWORD type, family, model, stepping;
 DWORD feature;
+DWORD e_feature;
 } hardware_cpuinfo;
 
  hardware_cpuinfo hardware_mycpu; //set by the kernel on startup
