@@ -1,11 +1,11 @@
+@echo off
 REM Set the location of your DJGPP dev environment here
 SET DJGPP_LOC=C:\gcc
 SET NASM_LOC=C:\gcc\bin
 
-
+REM clean
 del kernel32.bin
-del kernel32.o
-del fat.o
+del *.o
 
 REM set this to the location of djgpp.env
 set DJGPP=%DJGPP_LOC%\djgpp.env
@@ -28,4 +28,9 @@ set DJGPP=%DJGPP_LOC%\djgpp.env
 %NASM_LOC%\nasmw -f coff -o irqwrap.o irqwrap.asm
 %DJGPP_LOC%\bin\ld -T lscript.txt -Map mapfile.txt
 REM -Ttext 0x100000 --oformat binary -o kernel32.bin startup.o irqwrap.o asmlib.o kernel32.o scheduler.o
-dir kernel32.bin
+IF EXIST kernel32.bin. (
+gzip kernel32.bin
+) ELSE (
+@echo compile failed.
+)
+pause
