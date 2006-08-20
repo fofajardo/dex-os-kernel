@@ -165,7 +165,7 @@ int user_execp(char *fname,DWORD mode,char *params)
         printf("execp(): parent waiting for child to finish\n");
         #endif
         
-        while (!(id=pd_ok(hdl))) ; //process already running?
+        while (!(id=pd_ok(hdl))) {sleep(50);}; //process already running?
         fg_setmykeyboard(id);
         dex32_waitpid(id,0);
         //dex32_wait();
