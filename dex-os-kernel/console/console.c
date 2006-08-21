@@ -506,6 +506,34 @@ void console_ls(int style, int sortmethod)
     
 };
 
+/* Adds a commandline string to the history buffer
+   cmdline - the commandline string.
+   ptr - the current tail pointer.
+*/
+void add_history(console_history *cmdlinehistory,char *cmdline,int *ptr) {
+
+	 int count = *ptr;
+	   if (count>=MAX_CMDLINE_HISTORY) {//shift history 
+	   	  int i = 0;
+	   	  for (i=0; i < MAX_CMDLINE_HISTORY-1; i++) {
+		  	  strcpy(cmdlinehistory[i].command_line,cmdlinehistory[i+1].command_line);
+		  }
+		  strncpy(cmdlinehistory[MAX_CMDLINE_HISTORY-1].command_line,cmdline,MAX_CMDLINE_LENGTH);
+	   } else {
+ 	      strncpy(cmdlinehistory[count].command_line,cmdline,MAX_CMDLINE_LENGTH);
+ 	      (*ptr)++;
+	  }
+	   
+};
+
+void show_history(console_history *cmdlinehistory,int ptr) {
+         int i = 0;
+         printf("history\n");
+	     for (i=0; i < ptr; i++) {
+		 	 printf("%d. %s\n",i,cmdlinehistory[i].command_line);
+		 }
+}
+
 /* ==================================================================
    console_execute(const char *str):
    * This command is used to execute a console string.
@@ -516,6 +544,7 @@ int console_execute(const char *str)
   char temp[512];
   char *u;
   int command_length = 0;
+
   
   //make a copy so that strtok wouldn't ruin str
   strcpy(temp,str);
@@ -973,7 +1002,9 @@ void console_main()
     char last[256]="";
     char console_fmt[256]="%cdir% %% ";
     char console_prompt[256]="cmd >";
-    
+    console_history history[MAX_CMDLINE_HISTORY];
+	int command_ptr = 0;
+	
     DWORD ptr;
     
     myddl =Dex32CreateDDL();    
@@ -1017,8 +1048,14 @@ void console_main()
                sendtokeyb(last,&_q);
                sendtokeyb("\r",&_q);
               }
-               else   
+    if (strcmp(s,"history")==0) {
+	   show_history(history,command_ptr);
+	}
+               else  
+    { 
+    add_history(history,s,&command_ptr);
     console_execute(s);
+	}
     } while (1);
   ;};
 

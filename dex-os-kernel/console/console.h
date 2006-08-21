@@ -31,7 +31,12 @@
 #define CONSOLE_STACK_SIZE 0x2000
 #define SORT_NAME 0
 #define SORT_SIZE 1
+#define MAX_CMDLINE_LENGTH 1024
+#define MAX_CMDLINE_HISTORY 10
 
+typedef struct _console_history {
+	   char command_line[MAX_CMDLINE_LENGTH];
+} console_history;
 
 int console_first = 0;
 void console_main();
