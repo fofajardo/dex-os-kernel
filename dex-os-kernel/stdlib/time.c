@@ -153,8 +153,8 @@ void time_handler()
 
    //update the real-time clock
    //DEX32 is programmed to switch process every
-   // 1/200 of a second so we use a counter that counts
-   //up to 200 and then increments time_count which
+   // 1/100 of a second so we use a counter that counts
+   //up to 100 and then increments time_count which
    //holds the time elasped in seconds since the
    //system has started
    
@@ -186,7 +186,8 @@ void delay(DWORD w)
    DWORD t1, cpuflags;
    storeflags(&cpuflags);
    stopints();
-   t1 = ticks + w * ( context_switch_rate / 100);
+   int msperswitch = 1000/context_switch_rate;
+   t1 = ticks + ( w / msperswitch);
    restoreflags(cpuflags);
       
    while (ticks<t1);
