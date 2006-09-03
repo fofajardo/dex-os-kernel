@@ -31,7 +31,7 @@
 
 
 //timer set to switch to new task 100 times per second. (see time.h or time.c)
-int context_switch_rate = 100; 
+int context_switch_rate = 200; 
 char *scr_debug = (char*)0xb8000;
 
 int op_success;
@@ -93,7 +93,7 @@ kernel_sysinfo kernel_systeminfo;
 //This stores the current virtual console the kernel will use
 DEX32_DDL_INFO *consoleDDL;
 char *dex32_versionstring="DEX Extensible Operating System, project \"Chameleon\" \
-\nVersion 1.035 build July 6 2006\n \
+\nVersion 1.036 build July 6 2006\n \
 Copyright (C) 2006  Joseph Emmanuel DL Dayo\n \
 Developed as a requirement for CMSC 190 at the Institute of Computer Science\n \
 University of the Philippines, Los Baños.\n\n \
@@ -255,7 +255,7 @@ void dex32_startup()
     textcolor(YELLOW);
     printf("DEX");
     textcolor(WHITE);
-    printf("%-76s\n"," Extensible Operating System v.1.035 Beta project \"Chameleon\"");
+    printf("%-76s\n"," Extensible Operating System v.1.036 Beta project \"Chameleon\"");
     textcolor(WHITE);
     textbackground(BLACK);
     printf("BUILD May 16 2004\n");
@@ -316,7 +316,7 @@ void dex32_startup()
     while (1);
 };
 
-#define STARTUP_DELAY 400
+#define STARTUP_DELAY 2000
 
 /*This function is the first function that is called by the taskswitcher
   incidentally it is also the first process that gets run*/
