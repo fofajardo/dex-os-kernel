@@ -7,6 +7,7 @@
   "Microsoft Extensible Firmware Initiative FAT32 File System Specification"
   version 1.03 released by Microsoft Corporation on December 6,2000
   
+    
     DEX educational extensible operating system 1.0 Beta
     Copyright (C) 2004  Joseph Emmanuel DL Dayo
 
@@ -31,7 +32,7 @@
 #include "..\iomgr\iosched.h"
 #include "..\vfs\vfs_core.h"
 
-
+//#define DEBUG_FAT12
 int fat_deviceid;
 
 int obtain_next_cluster(int cluster,void *fat,int fat_type,BPB *bpbblock,int id)
@@ -196,6 +197,7 @@ DWORD fat_sectors_per_fat(BPB *bpbblock)
          else
     return bpbblock->sectors_per_fat;
 };
+
 
 void readBPB(BPB *bpbblock,int id)
 {
@@ -505,12 +507,14 @@ void file12tostr(fatdirentry *dir,char *str)
 
 DWORD fat_writefileEX(vfs_node *f,char *bufr,int start,int end,int id)
 {
-   BPB    bpbblock;
+ 	// read data should be allocated in the kernel heap since the io manager is
+	// is another process. The system call stack is not available to the IO manager.   
+    BPB *bpbblock=(BPB*)malloc(512);
    //perform the read
    
    fatdirentry   *buf2=0;
    int found=0,size=0,i;
-   readBPB(&bpbblock,id);
+   readBPB(bpbblock,id);
    
 #ifdef WRITE_DEBUG
    printf("fat_writefileEX() called..\n");
@@ -525,12 +529,14 @@ DWORD fat_writefileEX(vfs_node *f,char *bufr,int start,int end,int id)
       printf("found file loading: %d..\n",buf2->file_size);
 #endif
       
-      if (!writefile12EX2(buf2,&bpbblock,bufr,1,start,end,id))
+      if (!writefile12EX2(buf2,bpbblock,bufr,1,start,end,id)) {
+	  	 free(bpbblock);													  
          return 0;
+		 }
    };
    if (buf2)
       size=buf2->file_size;
-
+   free(bpbblock);
    return size;
 };
 
@@ -544,6 +550,9 @@ DWORD fat_createfileEX(vfs_node *f,int id)
 #endif
    
    buf=(BPB*)malloc(512);
+   if (buf==0x9000f4f7) {
+      printf("gotcha!!! fat_createfileEX\n");
+   }
    readBPB(buf,id);
    
 #ifdef WRITE_DEBUG
@@ -598,6 +607,9 @@ void fat_getfileblocks(file_PCB *f,DWORD *sectinfo,int id)
    fatdirentry *buf2=0;
    vfs_node *fp=f->ptr;
    // printf("fat_getfileblocks() called...\n");
+   if (buf==0x9000f4f7) {
+      printf("gotcha!!! fat_getfileblocks\n");
+   }
    readBPB(buf,id);
    // printf("obtaining directory information\n");
    if (f!=0)
@@ -727,7 +739,9 @@ int fat_getsectorsizeEX(vfs_node *f,int id)
    BYTE *fat = 0;
    DWORD sectors=0;
    int i;
-   
+      if (buf==0x9000f4f7) {
+      printf("gotcha!!! fat_getsectorsizeEX\n");
+   };
    readBPB(buf,id);
    
    fat=(BYTE*)malloc(fat_sectors_per_fat(buf)*512);//allocate memory for FAT
@@ -749,6 +763,9 @@ int fat_getsectorsizeEX(vfs_node *f,int id)
 void fat_rewritefileEX(vfs_node *f,int id)
 {
    BPB  *buf=(BPB*)malloc(512);
+   if (buf==0x9000f4f7) {
+     printf("gotcha!!! fat_rewritefileEX\n");
+   };
    readBPB(buf,id);
    fat_rewritefile(f,buf,id);
    free(buf);
@@ -764,6 +781,9 @@ DWORD fat_modifyattb(vfs_node *f, DWORD attb,int id)
    vfs_node *parentdir=(vfs_node*)f->path;
    BYTE *fat = 0;
    BPB  *bpbblock=(BPB*)malloc(512);
+         if (bpbblock==0x9000f4f7) {
+      printf("gotcha!!! fat_modifyattb\n");
+   };
    readBPB(bpbblock,id);
    
    fat=(BYTE*)malloc(fat_sectors_per_fat(bpbblock)*512);//allocate memory for FAT
@@ -1210,7 +1230,9 @@ int fat_mount_root(vfs_node *mountpoint,int id)
    int fat_type,size;
    if (mountpoint->files!=0) return -1;
    bpb=(BPB*)malloc(512);
-      
+   if (bpb==0x9000f4f7) {
+      printf("gotcha!!! fat_mount_root\n");
+   };   
      
    readBPB(bpb,id); //read the bios parameter block
    fatdirentry *fatdir;
@@ -1629,6 +1651,9 @@ DWORD fat_openfileEX(vfs_node *f,char *bufr,int start,int end,int id)
    
    fatdirentry   *dir=0;
    int found=0,size=0,i;
+      if (bpbblock==0x9000f4f7) {
+      printf("gotcha!!! fat_mount_root\n");
+   }; 
    readBPB(bpbblock,id);
    
    if (f!=0)
