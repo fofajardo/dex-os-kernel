@@ -30,7 +30,7 @@ Description: This module is the default round-robin scheduler that is
 PCB386 *sched_phead;
 int ps_schedid;
 devmgr_scheduler_extension ps_scheduler;
-
+extern int context_switch_rate;
 
 //Currently Implements the Round-Robin Algorithm
 PCB386 *scheduler(PCB386 *lastprocess)
@@ -41,8 +41,12 @@ PCB386 *scheduler(PCB386 *lastprocess)
   //This assumes that at least one process is not blocked or waiting.
   while ( (ptr->status & PS_ATTB_BLOCKED) || ptr->waiting )
   {
+   	  int equivalentmilli = 1000/context_switch_rate ;
+      if (ptr->waiting) {
+	  		ptr->waiting = (ptr->waiting-equivalentmilli) < 0 ? 0 :
+					                   ptr->waiting - equivalentmilli;
+   	  }
       ptr=ptr->next;
-      if (ptr->waiting) ptr->waiting--;
   };    
  //we should have picked a process at this point. 
  return ptr;
