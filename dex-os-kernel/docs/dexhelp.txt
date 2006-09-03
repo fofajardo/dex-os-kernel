@@ -1,5 +1,5 @@
 *************************************************************
-              DEX 1.0SP Operating System Quick Help
+              DEX 1.03 Operating System Quick Help
 Author: Joseph Emmanuel Dayo
 Date:   1/19/2004
 *************************************************************
@@ -44,12 +44,36 @@ umount  <mountpoint> 	-unmounts the device mounted at <mountpoint>
 use	<extension>	-Tells the extension manager to use this extension
 ver             	-show version information
 <filename> [parameters] -load an executable (PE or elf) into memory
-                        '-h' to enable HACK mode
+
    
 Note: commands are case sensitive
-II. Hotkeys -------------------------------------------------
+
+II. Mounting ATA / ATAPI drives==============================================
+
+In order to mount IDE drives, first dtermine the name assigned to 
+the partition you wish to mount (dex-os supports FAT16/FAT32) using
+the lsdev command.
+
+Then use the mount command:
+mount fat <name of partition> <desired mount point>
+
+For CD-ROM drives, chage fat to cdfs like this:
+mount cdfs <name of partition> < desired mount point>
+
+III. Changing keyboard set
+
+There is a possibility that the current scancode set is not working properly
+for your keyboard. In that case, you can use the ff commands:
+
+$keyb -useset n (where n=(1-3) is the desired scancode set)
+
+You can place it as an entry in the autoexec.bat so that it
+automaically configues the keyboard on startup.
+
+IV. Hotkeys -------------------------------------------------
 CTRL+ALT+F1	    -> Shows the task manager window
 ALT+TAB		    -> Foreground manager window	
 Ctrl+ALT+F4	    -> Terminates user process in the foreground.	
 CTRL+ALT+F2	    -> Create a new console
 CTRL+ALT+F5,F6 	    -> Switch consoles	
+---------------------------------------------------------------
