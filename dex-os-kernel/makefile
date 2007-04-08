@@ -1,9 +1,9 @@
 CC=gcc
-CFLAGS=-w -nostdlib -fno-builtin -ffreestanding -c
-NASMC=nasmw
-NASMFLAGS=-f coff
+CFLAGS=-w -nostdlib -fno-stack-protector -fno-builtin -ffreestanding -c
+NASMC=nasm
+NASMFLAGS=-f elf
 
-dex-os-kernel: kernel32.o scheduler.o fat.o iso9660.o devfs.o iosched.o devmgr_error.o \
+dex-os-kernel: kernel32.o scheduler.o fat.o perf.o cache.o stdout.o iso9660.o devfs.o iosched.o devmgr_error.o \
 			   startup.o asmlib.o irqwrap.o
 			   ld -T lscript.txt -Map mapfile.txt
 			   gzip kernel32.bin
@@ -27,17 +27,27 @@ iosched.o: iomgr/iosched.c
 		   $(CC) $(CFLAGS) -o iomgr.o iomgr/iosched.c
 
 devmgr_error.o: devmgr/devmgr_error.c
-				$(CC) $(CFLAGS) -o devmgr_error.o devmgr/devmgr_error.c
-         
+		$(CC) $(CFLAGS) -o devmgr_error.o devmgr/devmgr_error.c
+
+cache.o: cache/cache.c
+		$(CC) $(CFLAGS) -o cache.o cache/cache.c
+		
+perf.o: perfmon/perf.c
+		$(CC) $(CFLAGS) -o perf.o perfmon/perf.c
+
+stdout.o: hardware/display/stdout.c
+		$(CC) $(CFLAGS) -o stdout.o hardware/display/stdout.c
+		
 startup.o: startup/startup.asm
 		   $(NASMC)  $(NASMFLAGS) -o startup.o startup/startup.asm
 
 asmlib.o: startup/asmlib.asm
-		  $(NASMC) $(NASMFLAGS) -f coff -o asmlib.o startup/asmlib.asm
+		  $(NASMC) $(NASMFLAGS) -o asmlib.o startup/asmlib.asm
 
 irqwrap.o: irqwrap.asm      
-		   $(NASMC) $(NASMFLAGS) -f coff -o irqwrap.o irqwrap.asm
+		   $(NASMC) $(NASMFLAGS) -o irqwrap.o irqwrap.asm
+
 
 clean :
-	  rm kernel32.bin.gz kernel32.o scheduler.o fat.o iso9660.o devfs.o \
+	  rm kernel32.bin.gz kernel32.o perf.o cache.o stdout.o scheduler.o fat.o iso9660.o devfs.o \
 	  iomgr.o devmgr_error.o startup.o asmlib.o irqwrap.o
