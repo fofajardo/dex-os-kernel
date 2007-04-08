@@ -28,9 +28,9 @@
 #ifndef DEVMGR_HEADER
 #define DEVMGR_HEADER
 
-#include "..\dextypes.h"
-#include "..\process\sync.h"
-#include "..\process\process.h"
+#include "../dextypes.h"
+#include "../process/sync.h"
+#include "../process/process.h"
 
 //The maximum number of filesystems that could be supported
 #define MAXDEVICES 255
@@ -265,16 +265,18 @@ typedef struct _devmgr_interface {
 typedef struct _devmgr_fs_desc {
     devmgr_generic hdr;
     //For filesystem drivers only
-    int (*identify)(int device);				    //OPTIONAL- Used to detect if <device> supports this FS
+    int (*identify)(int device);			   //OPTIONAL- Used to detect if <device> supports this FS
     int (*mountroot)(vfs_node*,int device);    //called by the VFS when mounting a device
     int (*rewritefile)(vfs_node*,int device);
     int (*readfile)(vfs_node*,char*,int,int,int device);
     int (*chattb)(vfs_node*,const int,int device);
     int (*getsectorsize)(vfs_node*,int device);
     int (*deletefile)(vfs_node*,int device);
-    int (*addsectors)(vfs_node*,int,int device);
-    int (*writefile)(vfs_node*,char*,int,int,int device);
-    int (*createfile)(vfs_node*,int device);
+    int (*addsectors)(vfs_node*,int,int device);		//Adds additional sectors to a file
+    int (*writefile)(vfs_node*,char*,int,int,int device);	//Writes to a file
+    int (*createfile)(vfs_node*,int device);			//Creates a file
+    int (*createlink)(vfs_node*,int device);			//Creates a softlink
+    int (*movefile)(vfs_node*,vfs_node*,int device); 		//moves a file from source to destination
     int (*getbytesperblock)(int device);
     int (*validate_filename)(const char *filename);
     int (*mountdirectory)(vfs_node*,int device);

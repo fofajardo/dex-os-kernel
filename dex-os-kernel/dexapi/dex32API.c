@@ -205,7 +205,7 @@ implemented.
      api_addsystemcall(0x99,vfs_mount_device,0,API_REQUIRE_INTS);
      api_addsystemcall(0x9A,vfs_unmount_device,0,API_REQUIRE_INTS);
      api_addsystemcall(0x9B,devmgr_sendmessage,0,0);
-     
+     api_addsystemcall(0x9C,sync_userallocate,0,0);
      
      /****************Register myself to the device manager**********/
      strcpy(me.hdr.name,"syscallmgr");

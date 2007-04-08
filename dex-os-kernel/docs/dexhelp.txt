@@ -1,7 +1,7 @@
 *************************************************************
               DEX 1.03 Operating System Quick Help
 Author: Joseph Emmanuel Dayo
-Date:   1/19/2004
+Date:   4/08/2007
 *************************************************************
 
 I. Quick Help -----------------------------------------------
@@ -15,6 +15,7 @@ exit			-exits a console session
 files           	-shows the files currently open
 help            	-shows this screen
 kill <name>     	-kills a process named <name>
+ln <target> <link name>	-Create a soft link
 loadmod <filename>[-p]	-load a shared library (.dll or .so) into memory
 lsdev            	-List modules currently installed and available
 lsext            	-List extensions
@@ -28,6 +29,7 @@ mem             	-shows memory information
 meminfo			-show memory map information
 mkdir <name>    	-creates a directory
 mount <filesystem> <device> <location>  - mounts filesystem to device at location
+mv <source> <dest>	-Moves a file from source to destination
 newconsole      	-creates a new console
 path            	-show the current working directory
 prompt <string> 	-change the system prompt
@@ -47,6 +49,31 @@ ver             	-show version information
 
    
 Note: commands are case sensitive
+<<<<<<< dexhelp.txt
+II. Mounting ATA / ATAPI drives==============================================
+
+In order to mount IDE drives, first dtermine the name assigned to 
+the partition you wish to mount (dex-os supports FAT16/FAT32) using
+the lsdev command.
+
+Then use the mount command:
+mount fat <name of partition> <desired mount point>
+
+For CD-ROM drives, chage fat to cdfs like this:
+mount cdfs <name of partition> < desired mount point>
+
+III. Changing keyboard set
+
+There is a possibility that the current scancode set is not working properly
+for your keyboard. In that case, you can use the ff commands:
+
+$keyb -useset n (where n=(1-3) is the desired scancode set)
+
+You can place it as an entry in the autoexec.bat so that it
+automaically configues the keyboard on startup.
+
+IV. Hotkeys -------------------------------------------------
+=======
 
 II. Mounting ATA / ATAPI drives==============================================
 
@@ -71,9 +98,14 @@ You can place it as an entry in the autoexec.bat so that it
 automaically configues the keyboard on startup.
 
 IV. Hotkeys -------------------------------------------------
+>>>>>>> 1.2
 CTRL+ALT+F1	    -> Shows the task manager window
 ALT+TAB		    -> Foreground manager window	
 Ctrl+ALT+F4	    -> Terminates user process in the foreground.	
 CTRL+ALT+F2	    -> Create a new console
+<<<<<<< dexhelp.txt
 CTRL+ALT+F5,F6 	    -> Switch consoles	
 ---------------------------------------------------------------
+=======
+CTRL+ALT+F5,F6 	    -> Switch consoles	
+--------------------------------------------------------------->>>>>>> 1.2
