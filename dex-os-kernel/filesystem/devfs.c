@@ -25,8 +25,8 @@
 */
 
 #include "devfs.h"
-#include "..\iomgr\iosched.h"
-#include "..\devmgr\dex32_devmgr.h"
+#include "../iomgr/iosched.h"
+#include "../devmgr/dex32_devmgr.h"
 
 
 int devfs_myid = 0;
@@ -42,9 +42,16 @@ void devfs_rewritefile(vfs_node *f,int id)
     /*do nothing*/
 };
 
+/*The VFS will try to add more sectors, so we must implement this*/
+int devfs_addsectors(vfs_node *f,int n,int device) {
+	return 1;
+}
+
 /*Used for writing to block devices like a file*/
 int devfs_writefile(vfs_node *f, char *buf, int start, int end, int device_id)
 {
+	//printf("devfs writefile called %d %d\n",start,end);
+	//getch();
     int blockdevid = devmgr_finddevice(f->name);
     if (blockdevid != -1)
     {
@@ -53,13 +60,15 @@ int devfs_writefile(vfs_node *f, char *buf, int start, int end, int device_id)
          DWORD *handles, *buffers, ofs, handle;
          DWORD i, req_ind, index;
          void *temp_buffer;
-         devmgr_block_desc *myblock = (devmgr_block_desc *)devmgr_getdevice(blockdevid);
-         
-
-         
+		
+   	 	 devmgr_generic *mydevice = (devmgr_generic*)devmgr_getdevice(blockdevid);
+		 //Make sure that this is a BLOCK or character device
+         if (mydevice->type==DEVMGR_BLOCK) {
+         devmgr_block_desc *myblock = (devmgr_block_desc *)mydevice;
+	
          /*Compute for block size of the block device */
          if (myblock->get_block_size)
-                  bytes_per_sector = bridges_call(myblock, &myblock->get_block_size);
+                  bytes_per_sector =bridges_link(myblock,&myblock->get_block_size,0,0,0,0,0,0);
          else
                   return -1;
 
@@ -77,7 +86,7 @@ int devfs_writefile(vfs_node *f, char *buf, int start, int end, int device_id)
          /*validate the end block given*/
          if (myblock->total_blocks) 
          {
-                  total_blocks = bridges_call(myblock, &myblock->total_blocks);
+                  total_blocks = bridges_link(myblock,&myblock->total_blocks,0,0,0,0,0,0);
                   if ( endblock >= total_blocks) return -1;
          }
          else
@@ -160,12 +169,25 @@ int devfs_writefile(vfs_node *f, char *buf, int start, int end, int device_id)
          //check if this is the last block of the file, if so we stop.
          while (block < endblock);
          free(temp_buffer);
+	 	} else 
+		if (mydevice->type==DEVMGR_CHAR) {
+		  devmgr_char_desc *mychar = (devmgr_char_desc *)mydevice;	
+		  for (i=start; i < end; i++) {
+			  bridges_link(mychar, &mychar->put_char,buf[i],0,0,0,0,0);
+		  };			  
+		};
      };
 };
+
+int devfs_createfile(vfs_node *node,int device) {
+	return 1;
+}
 
 /*Used for reading block devices like a file*/
 int devfs_openfile(vfs_node *f, char *buf, DWORD start, DWORD end, int device_id)
 {
+	//printf("devfs openfile called %d %d\n",start,end);
+	//getch();
     int blockdevid = devmgr_finddevice(f->name);
     if (blockdevid != -1)
     {
@@ -173,13 +195,15 @@ int devfs_openfile(vfs_node *f, char *buf, DWORD start, DWORD end, int device_id
          DWORD startblock, endblock, adj, startadj, startlength;
          DWORD *handles, *buffers, ofs;
          DWORD i, req_ind, index;
-         devmgr_block_desc *myblock = (devmgr_block_desc *)devmgr_getdevice(blockdevid);
-         
+		 devmgr_generic *mydevice = (devmgr_generic*)devmgr_getdevice(blockdevid);
+		
+		 if (mydevice->type==DEVMGR_BLOCK) {
+			 
+         devmgr_block_desc *myblock = (devmgr_block_desc *)mydevice;
 
-         
          /*Compute for block size of the block device */
          if (myblock->get_block_size)
-                  bytes_per_sector = bridges_call(myblock, &myblock->get_block_size);
+                  bytes_per_sector = bridges_link(myblock,&myblock->get_block_size,0,0,0,0,0,0);
          else
                   return -1;
 
@@ -192,12 +216,13 @@ int devfs_openfile(vfs_node *f, char *buf, DWORD start, DWORD end, int device_id
          adj         = (end % bytes_per_sector) + 1;
          startadj    = start % bytes_per_sector;
          startlength = bytes_per_sector - startadj;
-
+        	//printf("reading block device() startblock %d endblock %d\n",startblock,endblock);
+			 //getch();
 
          /*validate the end block given*/
          if (myblock->total_blocks) 
          {
-                  total_blocks = bridges_call(myblock, &myblock->total_blocks);
+                  total_blocks = bridges_link(myblock,&myblock->total_blocks,0,0,0,0,0,0);
                   if ( endblock >= total_blocks) return -1;
          }
          else
@@ -212,11 +237,12 @@ int devfs_openfile(vfs_node *f, char *buf, DWORD start, DWORD end, int device_id
          buffers = (DWORD*)malloc( block_requests * sizeof(DWORD));
          
          block = 0; req_ind = 0;
-         
+             //printf("sening block requests\n");
+			 //getch();
          do 
          {
                 //determine the starting sector this cluster resides in
-                
+                //printf("reading block %d\n",block);
                 if (  block >= startblock && block <= endblock)
                 {
                    void *databuf=(void*)malloc(bytes_per_sector);
@@ -285,25 +311,32 @@ int devfs_openfile(vfs_node *f, char *buf, DWORD start, DWORD end, int device_id
 
          free(handles);
          free(buffers);
-         
+	 } else 
+		 if (mydevice->type==DEVMGR_CHAR) {
+	 };
     };
     return 1;
 };
 
+int devfs_createlink(vfs_node *f,int id) {
+	return 1;
+}
 
 /*This function is called by the VFS to mount the root volume, since this
 does not actually link to a block device, ID is ignored*/
 int devfs_mountroot(vfs_node *mountpoint,int device_id)
 {
     int i;
-    
+
+    		//printf("devfs mountroot() called\n");
+
     /*Let's take care of the root node first*/
     mountpoint->fsid = devfs_myid;
     mountpoint->memid = device_id;
     
     //wait until the device manager is ready
     sync_entercrit(&devmgr_busy);
-
+	//printf("devfs total devices %d\n",MAXDEVICES);
     for (i=0;i<MAXDEVICES;i++)
       {
             if (devmgr_devlist[i]!=0)
@@ -320,28 +353,50 @@ int devfs_mountroot(vfs_node *mountpoint,int device_id)
             node->fsid      = devfs_myid;
             node->attb      = FILE_OREAD | FILE_OWRITE;
             node->misc_flag = devmgr_devlist[i]->id;
-            
+
+    		//printf("devfs mounting %s\n",devmgr_devlist[i]->name);
+
             if (devmgr_devlist[i]->type == DEVMGR_BLOCK)
             {
-                devmgr_block_desc *blockdev = (devmgr_block_desc*)devmgr_devlist[i];
+                devmgr_block_desc *blockdev = (devmgr_block_desc*) devmgr_devlist[i];
                 if (blockdev->total_blocks!=0 &&
                     blockdev->get_block_size!=0)
                     { 
-                      node->size = bridges_call(blockdev,&blockdev->total_blocks) *
-                                   bridges_call(blockdev,&blockdev->get_block_size);
+                      //printf("performing bridge call\n");
+                      int num_blocks = bridges_link(blockdev,&blockdev->total_blocks,0,0,0,0,0,0);
+                      int block_size = bridges_link(blockdev,&blockdev->get_block_size,0,0,0,0,0,0);
+                      node->size = num_blocks * block_size;
                     };
             }
               else 
             node->size = 0;
-            
+            //printf("devfs done\n");
             strcpy(node->name,devmgr_devlist[i]->name);
             
             };
       };
+      //printf("devfs mountroot() ended\n");
    sync_leavecrit(&devmgr_busy);
    return 1;
-
 };
+
+int devfs_nullgetcache(char *buf,DWORD sectornumber,DWORD numblocks) {
+	return 0;
+};
+
+int devfs_nullreadwrite_block(int block,char *blockbuff, DWORD numblocks) {
+	return 0;
+};
+
+int devfs_nullinit() {
+return 0;
+}
+
+int devfs_nulltotalblocks()
+{
+return 0;
+};
+
 
 /*Cretes a null block device*/
 void devfs_initnull()
@@ -352,6 +407,16 @@ void devfs_initnull()
       strcpy(myblock.hdr.description,"null block device");
       myblock.hdr.size = sizeof(devmgr_block_desc);
       myblock.hdr.type = DEVMGR_BLOCK;
+      myblock.read_block = devfs_nullreadwrite_block;
+      myblock.write_block = devfs_nullreadwrite_block;
+      myblock.invalidate_cache = devfs_nullinit;
+      myblock.init_device = devfs_nullinit;
+      myblock.flush_device = devfs_nullinit;
+      myblock.getcache = devfs_nullinit;
+      myblock.total_blocks = devfs_nulltotalblocks;
+      myblock.get_block_size = devfs_nulltotalblocks;
+      
+      
       devmgr_register((devmgr_generic*)&myblock);
 
 };
@@ -368,11 +433,12 @@ void devfs_init()
       myfs.rewritefile = devfs_rewritefile;
       myfs.writefile = devfs_writefile;
       myfs.readfile = devfs_openfile;
+      myfs.createlink = devfs_createlink;
       myfs.getbytesperblock = devfs_getbytesperblock;
       myfs.mountdirectory = 0;
-      myfs.readfile = 0;
-      myfs.getbytesperblock = 0;
+	  myfs.addsectors = devfs_addsectors;
       myfs.unmount = 0;
+	  myfs.createfile = devfs_createfile;
 
       devfs_myid = devmgr_register((devmgr_generic*)&myfs);
    };

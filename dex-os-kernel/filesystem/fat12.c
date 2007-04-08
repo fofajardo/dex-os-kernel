@@ -26,14 +26,27 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 */
 
-#include "..\dextypes.h"
+#include "../dextypes.h"
 #include "fat12.h"
+<<<<<<< fat12.c
+#include "../devmgr/dex32_devmgr.h"
+#include "../iomgr/iosched.h"
+#include "../vfs/vfs_core.h"
+#include "../perfmon/perf.h"
+
+//#define DEBUG_FAT12
+//#define WRITE_DEBUG
+//#define WRITE_DEBUG2
+int fat_deviceid;
+
+=======
 #include "..\devmgr\dex32_devmgr.h"
 #include "..\iomgr\iosched.h"
 #include "..\vfs\vfs_core.h"
 
 //#define DEBUG_FAT12
 int fat_deviceid;
+>>>>>>> 1.2
 
 int obtain_next_cluster(int cluster,void *fat,int fat_type,BPB *bpbblock,int id)
 {
@@ -43,24 +56,35 @@ int obtain_next_cluster(int cluster,void *fat,int fat_type,BPB *bpbblock,int id)
    DWORD *fat32;
    int x,index;
 
+	#ifdef DEBUG_FAT12
+	  printf("obtain cluster for %d\n",cluster);
+    #endif
    if (fat == 0 || fat_type == FAT12_FAT32)
    {
       DWORD start_of_fat = bpbblock->num_boot_sectors;   
-      DWORD fat_sector = (cluster >> 7) + start_of_fat;
+	  DWORD fatoffset = cluster * 4 ;
+      DWORD fat_sector = (fatoffset/bpbblock->bytes_per_sector) + start_of_fat;
+	  DWORD fat_index = fatoffset%bpbblock->bytes_per_sector;
       DWORD handle;
-      fat32 = (DWORD*)malloc(512);
+	  DWORD *fat32cluster;
+	  char dptr[512];
+      
       
       #ifdef DEBUG_FAT12
-      printf("----reading FAT32 at %d:%d..",start_of_fat,cluster >> 7);
+	  printf("----reading entry for cluster\n",cluster);
+      printf("----reading FAT32 at %d:%d..\n",fat_sector,fat_index);
       #endif
       
-      handle=dex32_requestIO(id,IO_READ,fat_sector,1,fat32);
-      while (!dex32_IOcomplete(handle));
-      dex32_closeIO(handle);        
-         
-      cluster = fat32[cluster & 0x7f] & 0x0FFFFFFF;
+      handle=dex32_requestIO(id,IO_READ,fat_sector,1,dptr);
+	  #ifdef DEBUG_FAT12
+	  printf("----read requested\n");
+      #endif
+      while (!dex32_IOcomplete(handle)) {sleep(10);};
+      dex32_closeIO(handle);
+	  
+      fat32cluster = (DWORD*) (dptr+fat_index);  
+      cluster = *fat32cluster & 0x0FFFFFFF;
       
-      free(fat32);
       
       #ifdef DEBUG_FAT12
       printf("done %d.\n",cluster);
@@ -110,26 +134,27 @@ int fat_write_cluster(int cluster,int value,void *fat,int fat_type,BPB *bpbblock
    if (fat == 0 || fat_type == FAT12_FAT32)
    {
       DWORD start_of_fat = bpbblock->num_boot_sectors;   
-      DWORD fat_sector = (cluster >> 7) + start_of_fat;
+	  DWORD fatoffset = cluster * 4 ;
+      DWORD fat_sector = (fatoffset/bpbblock->bytes_per_sector) + start_of_fat;
+	  DWORD fat_index = fatoffset%bpbblock->bytes_per_sector;
       DWORD handle;
-      fat32 = (DWORD*)malloc(512);
-      
+	  DWORD *fat32cluster; 
+	  char dptr[512];
+	   
+         
       #ifdef DEBUG_FAT12
-      printf("----reading FAT32 at %d:%d..",start_of_fat,cluster >> 7);
+      printf("----reading FAT32 at %d:%d..",fat_sector,fat_index);
       #endif
       
-      handle=dex32_requestIO(id,IO_READ,fat_sector,1,fat32);
-      while (!dex32_IOcomplete(handle));
+      handle=dex32_requestIO(id,IO_READ,fat_sector,1,dptr);
+      while (!dex32_IOcomplete(handle)) {sleep(10);};
       dex32_closeIO(handle);        
-         
-      fat32[cluster & 0x7f] = value & 0x0FFFFFFF;   
+      fat32cluster = (DWORD*)(dptr+fat_index);     
+      *fat32cluster = value & 0x0FFFFFFF;   
 
-      handle=dex32_requestIO(id,IO_WRITE,fat_sector,1,fat32);
-      while (!dex32_IOcomplete(handle));
+      handle=dex32_requestIO(id,IO_WRITE,fat_sector,1,dptr);
+      while (!dex32_IOcomplete(handle)) {sleep(10);};
       dex32_closeIO(handle);        
-      
-      free(fat32);
-      
       #ifdef DEBUG_FAT12
       printf("done %d.\n",cluster);
       #endif
@@ -202,7 +227,9 @@ DWORD fat_sectors_per_fat(BPB *bpbblock)
 void readBPB(BPB *bpbblock,int id)
 {
    startints();
-
+#ifdef DEBUG_FAT12
+	printf("reading BPB..\n");
+#endif	
    DWORD handle=dex32_requestIO(id,IO_READ,0,1,bpbblock);
 
    
@@ -233,7 +260,7 @@ void fat_diskdiagnostics(int id)
             printf("\n=====Block number %d======\n", blocknum);
              
             DWORD handle=dex32_requestIO(id,IO_READ,blocknum,1,buf);
-            while (!dex32_IOcomplete(handle));
+            while (!dex32_IOcomplete(handle)) {sleep(10);};
             dex32_closeIO(handle);
             
             for (i=0;i < 20 ; i++)
@@ -254,7 +281,7 @@ void loadfat(BPB *bpbblock,void *fat,int id)
          #endif
          
          DWORD handle=dex32_requestIO(id,IO_READ,start_of_fat,fat_sectors_per_fat(bpbblock),fat);
-         while (!dex32_IOcomplete(handle));
+         while (!dex32_IOcomplete(handle)) {sleep(10);};
          dex32_closeIO(handle);     
          
          #ifdef DEBUG_FAT12
@@ -284,7 +311,7 @@ DWORD fat_readcluster(int cluster,BPB *bpbblock, char *buf,int id)
     DWORD handle;
     DWORD start_sector = clustertoblock(bpbblock,cluster);
     handle=dex32_requestIO(id, IO_READ, start_sector, bpbblock->sectors_per_cluster, buf);
-    while (!dex32_IOcomplete(handle));
+    while (!dex32_IOcomplete(handle)) {sleep(10);};
     dex32_closeIO(handle);     
 };
 
@@ -293,7 +320,7 @@ DWORD fat_writecluster(int cluster,BPB *bpbblock, char *buf,int id)
     DWORD handle;
     DWORD start_sector = clustertoblock(bpbblock,cluster);
     handle = dex32_requestIO(id, IO_WRITE, start_sector, bpbblock->sectors_per_cluster, buf);
-    while (!dex32_IOcomplete(handle)) ;
+    while (!dex32_IOcomplete(handle)) {sleep(10);};
     dex32_closeIO(handle);     
 };
 
@@ -302,7 +329,7 @@ DWORD fat_writeblock(int block,BPB *bpbblock, char *buf,int id)
     DWORD handle;
     DWORD start_sector = block;
     handle=dex32_requestIO(id,IO_WRITE,start_sector,bpbblock->sectors_per_cluster,buf);
-    while (!dex32_IOcomplete(handle)) ;
+    while (!dex32_IOcomplete(handle)) {sleep(10);};
     dex32_closeIO(handle);     
 };
 
@@ -446,7 +473,7 @@ int loadroot(fatdirentry **buf,const BPB *bpbblock,int id)
    
    //Wait until the IO manager has finished the request and then close the request
    //handles
-   while (!dex32_IOcomplete(handle));
+   while (!dex32_IOcomplete(handle)) {sleep(10);};
    
    dex32_closeIO(handle);
 
@@ -536,9 +563,24 @@ DWORD fat_writefileEX(vfs_node *f,char *bufr,int start,int end,int id)
    };
    if (buf2)
       size=buf2->file_size;
+<<<<<<< fat12.c
+
    free(bpbblock);
+=======
+   free(bpbblock);
+>>>>>>> 1.2
    return size;
 };
+
+DWORD fat_createlink(vfs_node *f,int id) {
+      int ret;
+      char *link_data =(char*) malloc(strlen(f->link_ptrstr)+10);
+      BPB *buf=(BPB*)malloc(512);
+      readBPB(buf,id);
+      ret = fat_createfile(f,buf,id);
+      free(buf);
+      return ret;
+}
 
 DWORD fat_createfileEX(vfs_node *f,int id)
 {
@@ -668,15 +710,16 @@ DWORD update_dirs(BPB *bpbblock,vfs_node *tdir,BYTE *fat,int id)
       #endif
 
       //For a FAT32 volume
-      if (fat_get_fat_type(id,bpbblock) == FAT12_FAT32)
+      /*if (fat_get_fat_type(id,bpbblock) == FAT12_FAT32)
       {
             BPB32 *bpb32 = bpbblock;
             DWORD root_cluster = bpb32->rootcluster;
             blockloc = clustertoblock(bpbblock,root_cluster);
             sector = get_sector_fromcluster(root_cluster,&bpbblock,0,fat,id);
       }
-      else      
+      else  */    
       //For a FAT12/16 volume
+      if (fat_get_fat_type(id,bpbblock) != FAT12_FAT32)
       {
           blockloc = fat_sectors_per_fat(bpbblock) * bpbblock->num_fats +
                      bpbblock->num_boot_sectors;
@@ -686,22 +729,18 @@ DWORD update_dirs(BPB *bpbblock,vfs_node *tdir,BYTE *fat,int id)
           
           //queue the WRITE request
           DWORD handle = dex32_requestIO(id,IO_WRITE,blockloc,sector,dir);
-          while (!dex32_IOcomplete(handle)) ;
+          while (!dex32_IOcomplete(handle)) {sleep(10);};
           dex32_closeIO(handle);   
+          return;
+      };
       };
 
-   }
-   else
-      //a normal subdirectory
-   {
       fatdirentry *direntry= (fatdirentry*) tdir->misc;
       char temp[255];
       file12tostr(direntry,temp);
       //printf("dir name from parent: %s size %d\n", temp,tdir->miscsize2);
       //printf("starting sector: %d \n",direntry->st_clust);
       writefile12EX2(direntry,bpbblock,tdir->misc2,1,0,tdir->miscsize2,id);
-   };
-   
 };
 
 DWORD update_fats(BPB *bpbblock,BYTE *fat,int id)
@@ -717,7 +756,7 @@ DWORD update_fats(BPB *bpbblock,BYTE *fat,int id)
 
    DWORD handle=dex32_requestIO(id,IO_WRITE, fat_start_sector,
                  total_fat_clusters,(void*)fat);
-   while (!dex32_IOcomplete(handle)) ;
+   while (!dex32_IOcomplete(handle)) {sleep(10);};
    dex32_closeIO(handle);
    
    fat_start_sector += fat_sectors_per_fat(bpbblock);
@@ -748,7 +787,7 @@ int fat_getsectorsizeEX(vfs_node *f,int id)
    for (i=0;i<fat_sectors_per_fat(buf);i++)
    {
       DWORD handle=dex32_requestIO(id,IO_READ,buf->num_boot_sectors+i,1,(void*)(fat+i*512));
-      while (!dex32_IOcomplete(handle)) ;
+      while (!dex32_IOcomplete(handle)) {sleep(10);};
       dex32_closeIO(handle);
    };
    
@@ -859,7 +898,7 @@ DWORD fat_addsectors(vfs_node *f, DWORD sectors /*sectors to add*/,int id)
 #ifdef WRITE_DEBUG2
    printf("doing stuff..last cluster located at: %d \n",cur);
    printf("Sectors requested: %d\n",sectors);
-   getch();
+   //getch();
 #endif
    
    for (i=0;i<sectors;i++)
@@ -879,7 +918,7 @@ DWORD fat_addsectors(vfs_node *f, DWORD sectors /*sectors to add*/,int id)
       //write to the last sector
 #ifdef WRITE_DEBUG2
       printf("writing to cluster %d value %d.\n",cur,fc);
-      getch();
+      //getch();
 #endif
 
       if (cur==0) 
@@ -1031,7 +1070,7 @@ DWORD fat_createfile(vfs_node *f,BPB *bpbblock,int id)
    
 #ifdef WRITE_DEBUG
    printf("fat2_createfile() called: parent directory name %s..\n",f->path->name);
-   getch();
+   //getch();
 #endif
    
    
@@ -1055,8 +1094,19 @@ DWORD fat_createfile(vfs_node *f,BPB *bpbblock,int id)
 #endif
       
    }
-   else
+   else {
+      if (fat_type==FAT12_FAT32) {
+      
+      	dirsize=getdirsectorsize((fatdirentry*)parentdir->misc,bpbblock,0,fat,id)*bpbblock->bytes_per_sector;
+      	maxindex=dirsize/sizeof(fatdirentry);
+      
+	#ifdef WRITE_DEBUG
+      	printf("directory..max: %d entries..\n",maxindex);
+	#endif
+ 
+      } else
       maxindex=bpbblock->num_root_dir_ents;
+   }
    
    for (i=0;i<maxindex;i++)
    {
@@ -1125,7 +1175,8 @@ DWORD fat_createfile(vfs_node *f,BPB *bpbblock,int id)
             fatdirentry *dirent;
             vfs_node *p;
             int dirsize = bpbblock->sectors_per_cluster * 512;
-            fc = obtainfreecluster(fat,bpbblock->total_sectors-3,bpbblock,fat_type,id);
+			DWORD total_sectors =  (fat_type==FAT12_FAT32) ? bpbblock->total_sectors_large : bpbblock->total_sectors;
+            fc = obtainfreecluster(fat,total_sectors-3,bpbblock,fat_type,id);
             fat_write_cluster(fc,fat_get_eoc(fat_type),fat,fat_type,bpbblock,id);
            
             dir[i].attrib = ATTR_DIRECTORY;
@@ -1200,7 +1251,7 @@ DWORD fat_createfile(vfs_node *f,BPB *bpbblock,int id)
    if (!foundslot) //no slot was found??
    {
       //try to add a new sector
-      if (!fat_addsectors(parentdir,1,id))
+      if (fat_addsectors(parentdir,1,id)==-1)
       {
          //cannot add a new sector, no more disk space probably?
 #ifdef WRITE_DEBUG
@@ -1228,17 +1279,28 @@ int fat_mount_root(vfs_node *mountpoint,int id)
 {
    BPB         *bpb;
    int fat_type,size;
+   printf("FATDRVR: called\n");
    if (mountpoint->files!=0) return -1;
    bpb=(BPB*)malloc(512);
+<<<<<<< fat12.c
+   if (bpb==0x9000f4f7) {
+      printf("gotcha!!! fat_mount_root\n");
+   };   
+   printf("FATDRVR: reading BPB.\n");  
+=======
    if (bpb==0x9000f4f7) {
       printf("gotcha!!! fat_mount_root\n");
    };   
      
+>>>>>>> 1.2
    readBPB(bpb,id); //read the bios parameter block
    fatdirentry *fatdir;
-
+   printf("FATDRVR: determine FAT type.\n");
    //=(fatdirentry*)malloc(bpb->num_root_dir_ents*sizeof(fatdirentry));
    fat_type = fat_get_fat_type(id,bpb);
+   
+   if (fat_type == 0) return -1;
+	   
    if (fat_type==FAT12_FAT32)
    printf("FATDRVR: mounting FAT32.\n");
      else
@@ -1262,6 +1324,17 @@ int fat_mount_root(vfs_node *mountpoint,int id)
    mountpoint->memid = id;
    mountpoint->attb = mountpoint->attb | FILE_OREAD | FILE_OWRITE;
    mountpoint->files = 0;
+   
+   if (fat_type==FAT12_FAT32) {
+   	BPB32 *bpb32 = bpb;
+   	fatdirentry *dirent = (fatdirentry*)malloc(sizeof(fatdirentry));
+   	dirent->st_clust = bpb32->rootcluster & 0xFFFF;
+   	dirent->st_clust_msw = bpb32->rootcluster >> 16;
+   	mountpoint->misc=dirent;
+   	mountpoint->miscsize=sizeof(fatdirentry);
+   	mountpoint->start_sector = bpb32->rootcluster;
+   }
+   
    //mount the directories
 #ifdef DEBUG_FAT12
    printf("fat: Calling fat_mount\n");
@@ -1405,6 +1478,9 @@ int fat_mount(vfs_node *mountpoint,fatdirentry *buf2,BPB *bpb,int id)
             node->locked=0;
             node->files=0;
             node->size=buf2[i].file_size;
+	    if (fat_type == FAT12_FAT32)
+			node->start_sector = (buf2[i].st_clust_msw << 16) || buf2[i].st_clust;	
+				else
             node->start_sector = buf2[i].st_clust;
             //convert from DOS date format to dex32 VFS date format
             d=buf2[i].cdate; //The date created
@@ -1478,7 +1554,7 @@ int obtainfreecluster(BYTE *fat,int maxentries, BPB *bpbblock, int fat_type,int 
 
 int fillsectorinfo(fatdirentry *dir,BPB *bpbblock,DWORD *sectinfo,int id)
 {
-   unsigned int cluster=dir->st_clust,i,x,b,v=0,n=0; //obtain starting cluster
+   unsigned int cluster=(dir->st_clust_msw << 16) || dir->st_clust,i,x,b,v=0,n=0; //obtain starting cluster
    WORD index,*temp;
    BYTE *fat;
 #ifdef DEBUGX
@@ -1489,7 +1565,7 @@ int fillsectorinfo(fatdirentry *dir,BPB *bpbblock,DWORD *sectinfo,int id)
    for (i=0; i<fat_sectors_per_fat(bpbblock); i++)
    {
       DWORD handle=dex32_requestIO(id,IO_READ,bpbblock->num_boot_sectors+i,1,(void*)(fat+i*512));
-      while (!dex32_IOcomplete(handle)) ;
+      while (!dex32_IOcomplete(handle)) {sleep(10);};
       dex32_closeIO(handle);
       
       /* if (!read_block(bpbblock->num_boot_sectors+i,(void*)(fat+i*512)))
@@ -1549,7 +1625,7 @@ int writefile12EX2(fatdirentry *dir, BPB *bpbblock, char *buf, int se, int start
          
          fat_type = fat_get_fat_type( id, bpbblock);         
 
-         cluster = dir->st_clust;
+         cluster = (dir->st_clust_msw << 16) || dir->st_clust;
          
          if (cluster==0) return 0;
          
@@ -1620,7 +1696,7 @@ int writefile12EX2(fatdirentry *dir, BPB *bpbblock, char *buf, int se, int start
                handle = dex32_requestIO( id, IO_WRITE, sector, sectors_per_cluster, temp_buffer);
                
                //since this is a write, which cannot be reordered, we must wait for it to finish.
-               while (!dex32_IOcomplete(handle)) ;
+               while (!dex32_IOcomplete(handle)) {sleep(10);};
                dex32_closeIO(handle);
                
                //if this is the last block of requested writes we're done                              
@@ -1680,7 +1756,7 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
          DWORD bytes_per_cluster = bpbblock->sectors_per_cluster * 512;
          DWORD startblock, endblock, adj, startadj, startlength;
          unsigned int requested_bytes;
-         
+         cluster_list *clust_list_head=0,*clust_ptr; 
          /*Convert VFS linear addressing to block addressing*/
          requested_bytes  = end - start +1;
          startblock  = start / bytes_per_cluster;
@@ -1701,6 +1777,10 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
          xbuf   = (DWORD*)malloc( cluster_requests * sizeof(DWORD));
          
          
+            #ifdef DEBUG_FAT12
+			 printf("start cluster %d\n",cluster);
+			#endif
+
          if (cluster==0) return 0;
          
          
@@ -1714,18 +1794,46 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
          
          block = 0;
          
-         IOmgr_pause = 1;
+         //IOmgr_pause = 1;
          
+		 clust_list_head = (cluster_list*)malloc(sizeof(cluster_list));
+		 clust_ptr = clust_list_head;
+		 clust_list_head->cluster = cluster;
+		 clust_list_head->next=0;
+		 #ifdef DEBUG_FAT12
+			 printf("reading cluster list..\n");
+		 #endif
+		 while (clust_ptr->cluster<fat_get_eoc(fat_type)) {
+			 DWORD next_clust = obtain_next_cluster(clust_ptr->cluster, fat, fat_type, bpbblock, id);
+			 if (next_clust<fat_get_eoc(fat_type)) {
+			 	clust_ptr->next = (cluster_list*)malloc(sizeof(cluster_list));
+			 	clust_ptr=clust_ptr->next;
+				clust_ptr->cluster = next_clust;
+				clust_ptr->next=0; 
+			 } else break;
+			 
+		 };
+		 #ifdef DEBUG_FAT12
+		 printf("performing read request..\n");
+		 #endif
+		 //Read the clusters
+		 clust_ptr = clust_list_head;
          do {
-            //determine the starting sector this cluster resides      
+            //determine the starting sector this cluster resides     
+			cluster=clust_ptr->cluster;			 
             sector = clustertoblock(bpbblock,cluster);
-            
+            #ifdef DEBUG_FAT12
+			 printf("reading cluster %d -> block %d\n",cluster,sector);
+			#endif
             if (  block >= startblock && block <= endblock)
             {
                void *tbuf=(void*)malloc(bytes_per_cluster);
 
                handle[ind]=dex32_requestIO(id,IO_READ,sector,bpbblock->sectors_per_cluster,
                                   tbuf);
+               #ifdef DEBUG_FAT12
+			     printf("request complete.");
+			   #endif
                xbuf[ind]=(DWORD)tbuf;
                ind++;
                
@@ -1733,13 +1841,19 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
                if ( block == endblock ) break;
                
             };
-            
-            //compute the next cluster
-            cluster = obtain_next_cluster( cluster, fat, fat_type, bpbblock, id);
+			clust_ptr=clust_ptr->next;
             block++;
          }
-         while (cluster<fat_get_eoc(fat_type));
+         while (clust_ptr);
 
+		 //Free cluster listen
+		 clust_ptr = clust_list_head;
+		 do {
+			 cluster_list *nextptr = clust_ptr->next;
+			 free(clust_ptr);
+			 clust_ptr = nextptr;
+		 } while (clust_ptr);
+		 
          IOmgr_pause = 0;
          
          printf("waiting..\r");
@@ -1747,7 +1861,7 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
          //wait until the IO manager completes the read requests
          for (i = 0; i < ind; i++)
          {
-             while (!dex32_IOcomplete(handle[i]));     
+             while (!dex32_IOcomplete(handle[i])) {sleep(10);};     
          };
 
          //copy data read into the buffer   
@@ -1838,8 +1952,15 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
                         else
             readBPB(&bpbblock,devid);
             
-            bpbblock32 = &bpbblock;            
-            
+            bpbblock32 = &bpbblock;   
+			
+			#ifdef FAT_DEBUGBPB
+			printf("BPB sectors per cluster: %d\n",	bpbblock.sectors_per_cluster);					
+            printf("BPB entry num_root_dir_ents: %d\n",bpbblock.num_root_dir_ents);
+			printf("BPB entry bytes_per_sector : %d\n",bpbblock.bytes_per_sector);
+			#endif
+			
+			if (bpbblock.bytes_per_sector!=0) {						
             //obtain number of root directory sectors as illustrated in the
             //FAT documentation
             rootdirsectors = ((bpbblock.num_root_dir_ents * 32) + (bpbblock.bytes_per_sector - 1 )) /
@@ -1866,7 +1987,10 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
             if (countofclusters < 65525) 
                   return FAT12_FAT16;      
                     else 
-                  return FAT12_FAT32;      
+                  return FAT12_FAT32;
+				} else {
+					return 0;
+				}					
       };
       
       int fat_register(const char *name)
@@ -1887,12 +2011,15 @@ int loadfile12EX2(fatdirentry *dir,BPB *bpbblock,char *buf,int se,int start,int 
          fat_fs_desc.addsectors           = fat_addsectors;
          fat_fs_desc.writefile            = fat_writefileEX;
          fat_fs_desc.createfile           = fat_createfileEX;
+         fat_fs_desc.createlink		  = fat_createlink;
          fat_fs_desc.getbytesperblock     = fat_getbytesperblock;
          fat_fs_desc.mountdirectory       = fat_mountdirectory;
          fat_fs_desc.validate_filename    = fat_validatefilename;
          //register this filesystem
          fat_deviceid = devmgr_register((devmgr_generic*)&fat_fs_desc);
+		 
+		 //Setup performance monitoring
+		 perf_new_entity("fatfs_read");
+		 perf_new_entity("fatfs_write");
          return fat_deviceid;
       };
-      
-      

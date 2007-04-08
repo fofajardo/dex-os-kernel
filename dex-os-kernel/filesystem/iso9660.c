@@ -22,10 +22,10 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 */
-   #include "..\dextypes.h"
-   #include "..\vfs\vfs_core.h"
-   #include "..\devmgr\dex32_devmgr.h"
-   #include "..\iomgr\iosched.h"
+   #include "../dextypes.h"
+   #include "../vfs/vfs_core.h"
+   #include "../devmgr/dex32_devmgr.h"
+   #include "../iomgr/iosched.h"
    #include "iso9660.h"
    
    

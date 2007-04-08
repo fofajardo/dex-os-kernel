@@ -25,7 +25,7 @@
 #ifndef ISO9660_H
 #define IS09660_H
 
-#include "..\dextypes.h"
+#include "../dextypes.h"
 
 #define ISO9660_ATTBDIRECTORY 2
 #define ISO9660_ATTBLASTFILE 0x80

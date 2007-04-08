@@ -26,8 +26,9 @@
 #ifdef DEVFS_H
 #define DEVFS_H
 
-#include "..\dextypes.h"
+#include "../dextypes.h"
 
+int devfs_createlink(vfs_node *f,int id);
 DWORD devfs_getbytesperblock(int id);
 void  devfs_rewritefile(vfs_node *f,int id);
 int   devfs_writefile(vfs_node *f, char *buf, int start, int end, int device_id);

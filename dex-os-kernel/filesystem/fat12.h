@@ -28,7 +28,7 @@
 #ifndef FAT_H
 #define FAT_H
 
-#include "..\vfs\vfs_core.h"
+#include "../vfs/vfs_core.h"
 
 typedef unsigned char	uint8_t;	/* or #include <stdint.h> */
 typedef unsigned short	uint16_t;	/* Note: multi-byte values are little-endian */
@@ -107,7 +107,7 @@ typedef struct __attribute__((packed)) fat_bootsector			/* Warning: this struct 
     BYTE  sectors_per_cluster;
   	WORD  num_boot_sectors;	/* usu. =1 */
     BYTE  num_fats;              /* usu. =2 */
-  	WORD num_root_dir_ents;
+  	WORD num_root_dir_ents; /* FAT12/16 only*/
 	WORD total_sectors;		/* 16-bit; 0 if num sectors > 65535 */
     BYTE  media_ID_byte;         /* usu. =0F0h */
 	WORD sectors_per_fat;
@@ -180,6 +180,11 @@ typedef struct __attribute__((packed)) _fat_dirent               	/* Warning: th
         uint32_t file_size;          	/* in bytes */
 } fatdirentry;                         /* 32 bytes total */
 
+
+typedef struct __cluster_list {
+	DWORD cluster;
+	struct __cluster_list *next;
+} cluster_list;
 
 typedef struct __attribute__((packed)) _attrib                   /* Warning: this struct must be packed */
 {

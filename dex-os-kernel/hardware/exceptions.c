@@ -136,7 +136,8 @@ void exc_showdump(DWORD location,int type,DWORD pf_info)
 
    DDLprintf(&showdumpout,"Page table entry at that address is    : 0x%x\n",pageentry);
    DDLprintf(&showdumpout,"Address of faulting instruction is     : 0x%x\n",current_process->regs.EIP);
-   DDLprintf(&showdumpout,"Kernel Pagedirectory : 0x%x  Process Pagedirectory: 0x%x",pagedir1,current_process->regs.CR3);
+   DDLprintf(&showdumpout,"Syscall: %d Kernel Pagedirectory : 0x%x  Process Pagedirectory: 0x%x",
+       current_process->syscallsize,pagedir1,current_process->regs.CR3);
    
    DDLprintf(&showdumpout,"\n============ <Register values at time of fault>==========\n");
 
