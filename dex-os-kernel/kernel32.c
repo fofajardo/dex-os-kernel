@@ -27,6 +27,8 @@
 #define NULL 0
 #define DEBUGX
 #define USE_CONSOLEDDL
+#define USE_BENCHMARK
+
 
 
 
@@ -39,54 +41,63 @@ int op_success;
 //points to the location of the multiboot header defined in startup.asm
 extern int multiboothdr; 
 
+
 //order is important for some include files, DO NOT CHANGE!
 #include <stdarg.h>
 #include <limits.h>
 
 #include "dextypes.h"
-#include "process\sync.h"
-#include "stdlib\time.h"
-#include "stdlib\dexstdlib.h"
-#include "stdlib\qsort.h"
-#include "startup\multiboot.h"
-#include "memory\dexmem.h"
-#include "memory\kheap.h"
-#include "console\dex_DDL.h"
-#include "vfs\vfs_core.h"
-#include "process\process.h"
-#include "process\pdispatch.h"
-#include "devmgr\dex32_devmgr.h"
-#include "devmgr\devmgr_error.h"
-#include "console\dexio.h"
-#include "hardware\keyboard\keyboard.h"
-#include "hardware\hardware.h"
-#include "hardware\chips\ports.c"
-#include "hardware\vga\dexvga.h"
-#include "hardware\vga\dexvga.c"
-#include "hardware\floppy\floppy.h"
-#include "hardware\ATA\ataio.h"
-#include "hardware\exceptions.h"
-#include "hardware\chips\speaker.h"
-#include "dexapi\dex32API.h"
-#include "filesystem\fat12.h"
-#include "filesystem\iso9660.h"
-#include "filesystem\devfs.h"
-#include "process\event.h"
-#include "devmgr\extensions.h"
-#include "process\environment.h"
-#include "console\foreground.h"
-#include "console\console.h"
-#include "stdlib\stdlib.h"
-#include "devmgr\bridges.h"
-#include "process\scheduler.h"
-#include "console\script.h"
-#include "vfs\vfs_aux.h"
-#include "iomgr\iosched.h"
+#include "process/sync.h"
+#include "stdlib/time.h"
+#include "stdlib/dexstdlib.h"
+#include "stdlib/qsort.h"
+#include "startup/multiboot.h"
+#include "memory/dexmem.h"
+#include "memory/kheap.h"
+#include "console/dex_DDL.h"
+#include "vfs/vfs_core.h"
+#include "process/process.h"
+#include "process/pdispatch.h"
+#include "devmgr/dex32_devmgr.h"
+#include "devmgr/devmgr_error.h"
+#include "console/dexio.h"
+#include "hardware/keyboard/keyboard.h"
+#include "hardware/hardware.h"
+#include "hardware/chips/ports.c"
+#include "hardware/vga/dexvga.h"
+#include "hardware/vga/dexvga.c"
+#include "hardware/floppy/floppy.h"
+#include "hardware/ATA/ataio.h"
+#include "hardware/exceptions.h"
+#include "hardware/chips/speaker.h"
+#include "dexapi/dex32API.h"
+#include "filesystem/fat12.h"
+#include "filesystem/iso9660.h"
+#include "filesystem/devfs.h"
+#include "process/event.h"
+#include "devmgr/extensions.h"
+#include "process/environment.h"
+#include "console/foreground.h"
+#include "console/console.h"
+#include "stdlib/stdlib.h"
+#include "devmgr/bridges.h"
+#include "process/scheduler.h"
+#include "console/script.h"
+#include "vfs/vfs_aux.h"
+#include "iomgr/iosched.h"
+#include "hardware/display/stdout.h"
+#include "cache/cache.h"
 
 typedef struct _kernel_sysinfo {
 int boot_device;
 int part[3];
+DWORD start_address;
+DWORD end_address;
 } kernel_sysinfo;
+
+extern DWORD _startup;
+extern DWORD _end;
+
 
 kernel_sysinfo kernel_systeminfo;
 
@@ -105,41 +116,41 @@ void dex_kernel32();
 /*I know there are some disadvantages to directly including files
   in the source code instead of using object files, but it simplifies
   compilation without the use of a makefile*/
-#include "console\dex_DDL.c"
-#include "hardware\dexapm.c"
-#include "hardware\chips\irqhandlers.c"
-#include "memory\dlmalloc.c"
-#include "memory\bsdmallo.c"
-#include "hardware\floppy\floppy.c"
-#include "vfs\vfs_core.c"
-#include "module\module.c"
-#include "process\pdispatch.c"
-#include "console\console.c"
-#include "stdlib\time.c"
-#include "console\dexio.c"
-#include "stdlib\stdlib.c"
-#include "process\dex_taskmgr.c"
-#include "hardware\keyboard\keyboard.c"
-#include "hardware\pcibus\dexpci.c"
-#include "hardware\exceptions.c"
-#include "hardware\hardware.c"
-#include "hardware\chips\speaker.c"
-#include "devmgr\dex32_devmgr.c"
-#include "devmgr\extension.c"
-#include "process\environment.c"
-#include "stdlib\qsort.c"
-#include "console\foreground.c"
-#include "devmgr\bridges.c"
-#include "process\sync.c"
-#include "console\script.c"
-#include "process\process.c"
-#include "dexapi\dex32API.c"
-#include "hardware\ATA\ide.c"
-#include "vfs\vfs_aux.c"
-#include "memory\kheap.c"
-#include "memory\dexmem.c"
-#include "memory\dexmalloc.c"
-#include "vmm\vmm.c"
+#include "console/dex_DDL.c"
+#include "hardware/dexapm.c"
+#include "hardware/chips/irqhandlers.c"
+#include "memory/dlmalloc.c"
+#include "memory/bsdmallo.c"
+#include "hardware/floppy/floppy.c"
+#include "vfs/vfs_core.c"
+#include "module/module.c"
+#include "process/pdispatch.c"
+#include "console/console.c"
+#include "stdlib/time.c"
+#include "console/dexio.c"
+#include "stdlib/stdlib.c"
+#include "process/dex_taskmgr.c"
+#include "hardware/keyboard/keyboard.c"
+#include "hardware/pcibus/dexpci.c"
+#include "hardware/exceptions.c"
+#include "hardware/hardware.c"
+#include "hardware/chips/speaker.c"
+#include "devmgr/dex32_devmgr.c"
+#include "devmgr/extension.c"
+#include "process/environment.c"
+#include "stdlib/qsort.c"
+#include "console/foreground.c"
+#include "devmgr/bridges.c"
+#include "process/sync.c"
+#include "console/script.c"
+#include "process/process.c"
+#include "dexapi/dex32API.c"
+#include "hardware/ATA/ide.c"
+#include "vfs/vfs_aux.c"
+#include "memory/kheap.c"
+#include "memory/dexmem.c"
+#include "memory/dexmalloc.c"
+#include "vmm/vmm.c"
 
 void dex32_startup(); //start up the operating system
 extern startup();
@@ -193,7 +204,8 @@ int main()
      kernel_systeminfo.part[0] =    (mbhdr->boot_device >> 16) & 0xFF;
      kernel_systeminfo.part[1] =    (mbhdr->boot_device >> 8) & 0xFF;
      kernel_systeminfo.part[2] =    (mbhdr->boot_device & 0xFF);
-        
+     kernel_systeminfo.start_address = &_startup;
+     kernel_systeminfo.end_address = &_end;
      //obtain information about the memory configuration
      memory_map = (mmap*) mbhdr->mmap_addr;
      map_length = mbhdr->mmap_length;
@@ -267,7 +279,8 @@ void dex32_startup()
 
     /*show parameter information sent by the multiboot compliant bootloader.*/
     printf("dex32_startup(): Bootloader name : %s\n", mbhdr->boot_loader_name);
-    printf("dex32_startup(): Memory size: %d KB\n",memamount/1024);
+    printf("dex32_startup(): Memory size: %d KB 	kernel start addr: %0x%x\n",
+    		memamount/1024,kernel_systeminfo.start_address,kernel_systeminfo.end_address);
     printf("dex32_startup(): Parameters: %s\n",startup_parameters);
     //Initialize the extension manager
     printf("dex32_startup(): Initializing the extension manager..\n");
@@ -404,11 +417,17 @@ void dex_kernel32()
     //create the IO manager thread which handles all I/O to and from
     //block devices like the hard disk, floppy, CD-ROM etc. see iosched.c
     createkthread((void*)iomgr_diskmgr,"iomgr_diskmgr",200000);
-
-   
+	
+    printf("dex32_startup(): starting cache provider..\n");
+    //Install cache device_cache
+	cache_start_provider();
+	
     //Install a null block device
     devfs_initnull();
     
+	//Install a stdout character device
+	register_stdout();
+	
     //install and initialize the Device Filesystem driver
     devfs_init();
     
@@ -468,7 +487,7 @@ void dex_kernel32()
       same location as the physical memory
       see pdispatch.c/pdispatch.h for details*/
     process_dispatcher();
-    ;
+    
 };
 
 void end_func()
