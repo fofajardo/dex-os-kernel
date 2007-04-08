@@ -46,7 +46,7 @@ int script_load(const char *filename)
 {
     file_PCB *handle;
     static int instance= 0;    
-    int echo_command = 1;
+    int echo_command = 1,i;
     
     //This is to prevent infinite instances of the script interpreter
     if (instance> SCRIPT_MAXINSTANCE) return -1;
@@ -106,4 +106,3 @@ int script_load(const char *filename)
     fclose(handle);
     return 1;
 };
-

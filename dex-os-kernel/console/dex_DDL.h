@@ -31,7 +31,7 @@
 #ifndef DEX_DLL_H
 #define DEX_DLL_H
 
-#include "..\dextypes.h"
+#include "../dextypes.h"
 
 typedef struct _dex32_direct_device_hdl {
 DWORD size;           //defines the size of this structure
