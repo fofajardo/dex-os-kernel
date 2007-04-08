@@ -26,6 +26,7 @@
 */
 
 #include "console.h"
+#include "../perfmon/perf.h"
   
 /*A console mode get string function terminates
 upon receving \r */
@@ -82,19 +83,22 @@ void meminfo()
     DWORD totalbytes = totalpages * 0x1000;
     DWORD freebytes = totalbytes - (totalpages - stackbase[0])* 0x1000;
     printf("=================Memory Information===============\n");
+    printf("kernel start addr: 0x%x\n",kernel_systeminfo.start_address);
+    printf("kernel end addr: 0x%x\n",kernel_systeminfo.end_address);
     printf("Pages available     : %10u pages\n",stackbase[0]);
     printf("Total Pages         : %10d pages\n",totalpages);
     printf("Total Memory        : %10u bytes (%10d KB)\n",totalbytes, totalbytes / 1024);
     printf("Free Memory         : %10u bytes (%10d KB)\n",freebytes, freebytes / 1024);
     printf("used pages          : %10d pages (%10d KB)\n",totalpages-stackbase[0],
-    (totalpages-stackbase[0])*0x1000);
+    ((totalpages-stackbase[0])*0x1000)/1024);
   };
 
 int delfile(char *fname)
   {
-    int sectors;
-    file_PCB *f=openfilex(fname,FILE_WRITE);
-    return fdelete(f);
+    //int sectors;
+    //file_PCB *f=openfilex(fname,FILE_WRITE);
+    //return fdelete(f);
+    return vfs_removefile(fname);
   };
 
 int user_fork()
@@ -446,6 +450,9 @@ void console_ls(int style, int sortmethod)
             if (buffer[i].attb&FILE_MOUNT)
                 textcolor(LIGHTBLUE);
             else
+               if (buffer[i].attb&FILE_LINK)
+            	  textcolor(LIGHTBLUE);
+            	  else
                 if (buffer[i].attb&FILE_DIRECTORY)
                     textcolor(GREEN);
                 else
@@ -468,6 +475,9 @@ void console_ls(int style, int sortmethod)
             if (buffer[i].attb&FILE_MOUNT)
                 textcolor(LIGHTBLUE);
             else
+            	if (buffer[i].attb&FILE_LINK)
+            	  textcolor(LIGHTBLUE);
+            	  else
                 if (buffer[i].attb&FILE_DIRECTORY)
                     textcolor(GREEN);
                 else
@@ -477,7 +487,12 @@ void console_ls(int style, int sortmethod)
                     textcolor(WHITE);
                     
             strcpy(fname,buffer[i].name);
+            if (buffer[i].attb&FILE_LINK) {
+            	strcat(fname,"=>");
+            	strcat(fname,buffer[i].link_ptrstr);
+            }
             fname[24]=0;
+          
             printf("%-25s ",fname);
             
             textcolor(WHITE);
@@ -544,7 +559,12 @@ int console_execute(const char *str)
   char temp[512];
   char *u;
   int command_length = 0;
+<<<<<<< console.c
 
+
+=======
+
+>>>>>>> 1.3
   
   //make a copy so that strtok wouldn't ruin str
   strcpy(temp,str);
@@ -562,6 +582,10 @@ int console_execute(const char *str)
                     console_execute(temp); 
                 }
                 else
+	if (strcmp(u,"stats")==0) {
+					perf_printstats();
+				}
+				else
     if (strcmp(u,"fgman")==0)
                 {
                     fg_set_state(1);
@@ -663,6 +687,10 @@ int console_execute(const char *str)
 		printf("%s",dex32_versionstring);
                 }
                 else
+    if (strcmp(u,"uname")==0) {
+    		printf("DEX Extensible operating system\n");
+    		}
+    		else
     if (strcmp(u,"cpuid")==0)
                 {
                    hardware_cpuinfo mycpu;
@@ -892,6 +920,44 @@ int console_execute(const char *str)
 
               }
               else
+    if (strcmp(u,"mv")==0) {
+    		u=strtok(0," ");
+    		if (u!=0) {
+    			char *source_file = u;
+    			u=strtok(0," ");
+    			if (u!=0) {
+    				char *target_file=u;
+	    			if (vfs_movefile(source_file,target_file)!=-1) {
+	    				printf("file moved.");
+	    			} else {
+	    			printf("move failed.\n");
+	    			}
+	    			
+    			} else {
+    			   printf("missing parameter.\n");
+    			}
+     		} else 
+    		printf("missing parameter.\n");
+    	      }
+    	      else
+    if (strcmp(u,"ln")==0) {
+    		u=strtok(0," ");
+    		if (u!=0) {
+    			char *link_target=u;
+    			u=strtok(0," ");
+    			if (u!=0) {
+    				char *link_name=u;
+	    			if (vfs_createlink(link_name,link_target)!=-1) {
+	    				printf("softlink created %s=>%s.\n",link_name,link_target);
+	    			} else {
+	    			printf("create failed\n");
+	    			}	
+    			} else {
+    			   printf("missing parameter.\n");
+    			}
+     		} else 
+    		printf("missing parameter.\n");
+	    } else
     if (strcmp(u,"lsdev")==0)
              {
               devmgr_showdevices();
@@ -1058,4 +1124,3 @@ void console_main()
 	}
     } while (1);
   ;};
-
