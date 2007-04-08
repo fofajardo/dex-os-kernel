@@ -2,7 +2,7 @@
 
 section .text
 
-global _syscall
-_syscall
+global syscall
+syscall
    call 0xD8:0
 ret

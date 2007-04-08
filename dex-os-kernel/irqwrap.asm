@@ -4,59 +4,59 @@
 
 section .text
 
-extern _time_handler
-extern _kbd_irq
-extern _pagefaulthandler
-extern _fdchandler
-extern _api_syscall
-extern _GPFhandler
-extern _CPUint
-extern _nocoprocessor
-extern _divide_error
-extern _exc_invalidtss
-extern _irq_activate
+extern time_handler
+extern kbd_irq
+extern pagefaulthandler
+extern fdchandler
+extern api_syscall
+extern GPFhandler
+extern CPUint
+extern nocoprocessor
+extern divide_error
+extern exc_invalidtss
+extern irq_activate
 
 ;this function handles the normal DEX32 system calls
-global _syscallwrapper
-_syscallwrapper:
+global syscallwrapper
+syscallwrapper:
 push edi
 push esi
 push edx
 push ecx
 push ebx
 push eax
-call _api_syscall
+call api_syscall
 add esp,24
 iret
 
 
 
-global _CPUintwrapper
-_CPUintwrapper:
+global CPUintwrapper
+CPUintwrapper:
 cli
- call _CPUint
+ call CPUint
 sti
 iret
 
 
-global _fdcwrapper
-_fdcwrapper:
+global fdcwrapper
+fdcwrapper:
 cli
 pusha
-call _fdchandler
+call fdchandler
 popa
 sti
 iret
 
-global _copwrapper
-_copwrapper:
+global copwrapper
+copwrapper:
 cli
-call _nocoprocessor
+call nocoprocessor
 sti
 iret
 
-global _timerwrapper
-_timerwrapper:
+global timerwrapper
+timerwrapper:
 cli
 push ebp
 push gs
@@ -66,7 +66,7 @@ push ss
 push ds
 pusha
 
-call _time_handler
+call time_handler
 
 popa
 pop ds
@@ -79,8 +79,8 @@ sti
 iret
 
 
-global _kbdwrapper
-_kbdwrapper:
+global kbdwrapper
+kbdwrapper:
 push ebp
 push gs
 push fs
@@ -89,7 +89,7 @@ push ss
 push ds
 pusha
 
-call _kbd_irq
+call kbd_irq
 
 popa
 pop ds
@@ -101,8 +101,8 @@ pop ebp
 
 iret
 
-global _irq1wrapper
-_irq1wrapper:
+global irq1wrapper
+irq1wrapper:
 push ebp
 push gs
 push fs
@@ -112,7 +112,7 @@ push ds
 pusha
 
 push 1
-call _irq_activate
+call irq_activate
 add esp,4
 
 popa
@@ -125,8 +125,8 @@ pop ebp
 iret
 
 
-global _irq2wrapper
-_irq2wrapper:
+global irq2wrapper
+irq2wrapper:
 push ebp
 push gs
 push fs
@@ -136,7 +136,7 @@ push ds
 pusha
 
 push 2
-call _irq_activate
+call irq_activate
 add esp,4
 
 popa
@@ -148,8 +148,8 @@ pop gs
 pop ebp
 iret
 
-global _irq3wrapper
-_irq3wrapper:
+global irq3wrapper
+irq3wrapper:
 push ebp
 push gs
 push fs
@@ -159,7 +159,7 @@ push ds
 pusha
 
 push 3
-call _irq_activate
+call irq_activate
 add esp,4
 
 popa
@@ -171,8 +171,8 @@ pop gs
 pop ebp
 iret
 
-global _irq4wrapper
-_irq4wrapper:
+global irq4wrapper
+irq4wrapper:
 push ebp
 push gs
 push fs
@@ -182,7 +182,7 @@ push ds
 pusha
 
 push 4
-call _irq_activate
+call irq_activate
 add esp,4
 
 
@@ -195,8 +195,8 @@ pop gs
 pop ebp
 iret
 
-global _irq5wrapper
-_irq5wrapper:
+global irq5wrapper
+irq5wrapper:
 push ebp
 push gs
 push fs
@@ -206,7 +206,7 @@ push ds
 pusha
 
 push 5
-call _irq_activate
+call irq_activate
 add esp,4
 
 
@@ -219,8 +219,8 @@ pop gs
 pop ebp
 iret
 
-global _irq6wrapper
-_irq6wrapper:
+global irq6wrapper
+irq6wrapper:
 push ebp
 push gs
 push fs
@@ -230,7 +230,7 @@ push ds
 pusha
 
 push 6
-call _irq_activate
+call irq_activate
 add esp,4
 
 popa
@@ -242,8 +242,8 @@ pop gs
 pop ebp
 iret
 
-global _irq7wrapper
-_irq7wrapper:
+global irq7wrapper
+irq7wrapper:
 push ebp
 push gs
 push fs
@@ -253,7 +253,7 @@ push ds
 pusha
 
 push 7
-call _irq_activate
+call irq_activate
 add esp,4
 
 popa
@@ -265,8 +265,8 @@ pop gs
 pop ebp
 iret
 
-global _irq8wrapper
-_irq8wrapper:
+global irq8wrapper
+irq8wrapper:
 push ebp
 push gs
 push fs
@@ -276,7 +276,7 @@ push ds
 pusha
 
 push 8
-call _irq_activate
+call irq_activate
 add esp,4
 
 
@@ -289,48 +289,48 @@ pop gs
 pop ebp
 iret
 
-global _div_wrapper
-_div_wrapper:
+global div_wrapper
+div_wrapper:
 cli 
 push ebp
 mov ebp,esp
 mov eax,[ebp+8]
 push eax
-call _divide_error
+call divide_error
 add esp,4
 pop ebp
 sti
 iret
 
-global _gpfwrapper
-_gpfwrapper:
+global gpfwrapper
+gpfwrapper:
 cli 
 push ebp
 mov ebp,esp
 mov eax,[ebp+8]
 push eax
-call _GPFhandler
+call GPFhandler
 add esp,4
 pop ebp
 sti
 iret
 
-global _invalidtsswrapper
-_invalidtsswrapper:
+global invalidtsswrapper
+invalidtsswrapper:
 cli 
 push ebp
 mov ebp,esp
 mov eax,[ebp+8]
 push eax
-call _exc_invalidtss
+call exc_invalidtss
 add esp,4
 pop ebp
 sti
 iret
 
 
-global _pfwrapper
-_pfwrapper:
+global pfwrapper
+pfwrapper:
 cli
 push ebp
 mov ebp,esp
@@ -338,7 +338,7 @@ mov eax,[ebp+8]
 push eax
 mov eax,cr2
 push eax
-call _pagefaulthandler
+call pagefaulthandler
 add esp,8
 sti
 iret
