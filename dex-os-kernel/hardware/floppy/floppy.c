@@ -828,7 +828,7 @@ BOOL format_track(BYTE track,DrvGeom *g)
 int floppy_totalblocks()
 {
 //return the total blocks of a 1.44MB floppy disk
-return 3056;
+return 2882;
 };
 
 
@@ -858,7 +858,7 @@ floppy_deviceid = devmgr_register((devmgr_generic*) &floppy_desc);
 //initialize the floppy disk
 reset();
 
-//assign the keyboard wrapper to IRQ 6
+//assign the floppy handler to IRQ 6
 irq_addhandler(floppy_deviceid,6,fdchandler);
 
 return floppy_deviceid;
