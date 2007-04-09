@@ -22,15 +22,20 @@ Description: This module is the default round-robin scheduler that is
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.      
 */
 
-#include "..\dextypes.h"
+#include "../dextypes.h"
 #include "process.h"
 #include "scheduler.h"
-#include "..\devmgr\dex32_devmgr.h"
+#include "../devmgr/dex32_devmgr.h"
 
 PCB386 *sched_phead;
 int ps_schedid;
 devmgr_scheduler_extension ps_scheduler;
+<<<<<<< scheduler.c
+
 extern int context_switch_rate;
+=======
+extern int context_switch_rate;
+>>>>>>> 1.2
 
 //Currently Implements the Round-Robin Algorithm
 PCB386 *scheduler(PCB386 *lastprocess)

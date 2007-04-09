@@ -417,6 +417,10 @@ static unsigned int pci_size(unsigned int base, unsigned long mask)
 	return size-1;			/* extent = size - 1 */
 }
 
+/*int pci_scan_by_class() {
+    pci_findclass(
+}*/
+
 int pci_find_capability(int dev, int cap)
 {
 	unsigned short status;
@@ -626,7 +630,6 @@ void init_pci(void)
                 mypci.pci_init = 0;
                 //Register this device to the device manager
                 devmgr_register((devmgr_generic*) &mypci);
-                
         };
         
     

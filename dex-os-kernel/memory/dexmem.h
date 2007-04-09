@@ -127,6 +127,7 @@ DWORD totalmemory=0;
 //holds physical location of the kernel page directory
 DWORD *pagedir1;
 
+int ints_enabled=1;
 
 //prototypes for page management
 extern void enablepaging();

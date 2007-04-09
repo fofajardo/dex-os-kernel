@@ -26,9 +26,9 @@
 #ifndef _PROCESS_H
 #define _PROCESS_H
 
-#include "..\dextypes.h"
-#include "..\vfs\vfs_core.h"
-#include "..\console\dex_DDL.h"
+#include "../dextypes.h"
+#include "../vfs/vfs_core.h"
+#include "../console/dex_DDL.h"
                                 
 #define ACCESS_SYS 0
 #define ACCESS_USER 1

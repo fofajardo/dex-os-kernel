@@ -6,41 +6,41 @@
 [bits 32]
 
 SECTION .data
-global _CsrX
-global _CsrY
-global _idtr_x
+global CsrX
+global CsrY
+global idtr_x
 
-_CsrX:
+
 CsrX:	db 0
 
-_CsrY:
+
 CsrY:	db 0
 
-global _attb
-_attb:
+global attb
+
 attb:   db 0
 
-_idtr_x:
+
 idtr_x:   dw 2047     ;idt limit
           dd 0x2000   
 
 
 testvalue dd 0xFAFAFAFA
 
-extern _memset
-extern _curp
-extern _kernelp
-extern _pagedir1
-extern _servicedirloc
-extern _tlb_address
-extern _pcibiosentry
-extern _pcibios
+extern memset
+extern curp
+extern kernelp
+extern pagedir1
+extern servicedirloc
+extern tlb_address
+extern pcibiosentry
+extern pcibios
 
 SECTION .text
 
 ;int testandset(DWORD *ptr)
-global _testandset
-_testandset:
+global testandset
+testandset:
     push ebp
     mov ebp,esp
     push ebx
@@ -60,8 +60,8 @@ _end_tst:
 
 ;int pci_finddevice(WORD deviceid,WORD vendorid, WORD index,char ;*busnumber, WORD *devnumber)
 
-global _pci_finddevice
-_pci_finddevice:
+global pci_finddevice
+pci_finddevice:
 	push ebp
 	mov ebp,esp
 
@@ -76,7 +76,7 @@ _pci_finddevice:
 	mov edx,[ebp+12]
 	mov esi,[ebp+16]
 	
-	call far [_pcibios]
+	call far [pcibios]
 
 	mov ecx, [ebp+20]	
 	mov [ecx],bh
@@ -96,8 +96,8 @@ _pci_finddevice:
 ;int pci_findclass(WORD classcode, WORD index,char 
 ;*busnumber, WORD *devnumber)
 
-global _pci_findclass
-_pci_findclass:
+global pci_findclass
+pci_findclass:
 	push ebp
 	mov ebp,esp
 
@@ -111,7 +111,7 @@ _pci_findclass:
 	mov ecx,[ebp+8]
 	mov esi,[ebp+12]
 	
-	call far [_pcibios]
+	call far [pcibios]
 
 	mov ecx, [ebp+16]	
 	mov [ecx],bh
@@ -129,8 +129,8 @@ _pci_findclass:
 	ret
 
 ;char _pci_readconfigbyte(char bus, char devfunc, WORD register)
-global _pci_readconfigbyte
-_pci_readconfigbyte:
+global pci_readconfigbyte
+pci_readconfigbyte:
 	push ebp
 	mov ebp,esp
 	
@@ -145,7 +145,7 @@ _pci_readconfigbyte:
 	mov bl, [ebp+12]
 	mov edi, [ebp+16]
 
-	call far [_pcibios]
+	call far [pcibios]
 
 	mov eax,ecx
 	pop ebx	
@@ -156,8 +156,8 @@ _pci_readconfigbyte:
 	ret
 
 ;word _pci_readconfigword(char bus, char devfunc, WORD register)
-global _pci_readconfigword
-_pci_readconfigword:
+global pci_readconfigword
+pci_readconfigword:
 	push ebp
 	mov ebp,esp
 	
@@ -172,7 +172,7 @@ _pci_readconfigword:
 	mov bl, [ebp+12]
 	mov edi, [ebp+16]
 
-	call far [_pcibios]
+	call far [pcibios]
 
 	mov eax,ecx
 	pop ebx	
@@ -183,8 +183,8 @@ _pci_readconfigword:
 	ret
 
 ;word _pci_readconfigdword(char bus, char devfunc, WORD register)
-global _pci_readconfigdword
-_pci_readconfigdword:
+global pci_readconfigdword
+pci_readconfigdword:
 	push ebp
 	mov ebp,esp
 	
@@ -199,7 +199,7 @@ _pci_readconfigdword:
 	mov bl, [ebp+12]
 	mov edi, [ebp+16]
 
-	call far [_pcibios]
+	call far [pcibios]
 
 	mov eax,ecx
 	pop ebx	
@@ -210,8 +210,8 @@ _pci_readconfigdword:
 	ret
 
 ;int _pci_writeconfigbyte(char bus, char devfunc, WORD register, char data)
-global _pci_writeconfigbyte
-_pci_writeconfigbyte:
+global pci_writeconfigbyte
+pci_writeconfigbyte:
 	push ebp
 	mov ebp,esp
 	
@@ -227,7 +227,7 @@ _pci_writeconfigbyte:
 	mov edi, [ebp+16]
 	mov ecx, [ebp+20]
 	
-	call far [_pcibios]
+	call far [pcibios]
 
 	shr eax,8
 	pop ebx	
@@ -238,8 +238,8 @@ _pci_writeconfigbyte:
 	ret
 
 ;int _pci_writeconfigword(char bus, char devfunc, WORD register, WORD data)
-global _pci_writeconfigword
-_pci_writeconfigword:
+global pci_writeconfigword
+pci_writeconfigword:
 	push ebp
 	mov ebp,esp
 	
@@ -255,7 +255,7 @@ _pci_writeconfigword:
 	mov edi, [ebp+16]
 	mov ecx, [ebp+20]
 	
-	call far [_pcibios]
+	call far [pcibios]
 
 	shr eax,8
 	pop ebx	
@@ -266,8 +266,8 @@ _pci_writeconfigword:
 	ret
 
 ;int _pci_writeconfigdword(char bus, char devfunc, WORD register, DWORD data)
-global _pci_writeconfigdword
-_pci_writeconfigdword:
+global pci_writeconfigdword
+pci_writeconfigdword:
 	push ebp
 	mov ebp,esp
 	
@@ -283,7 +283,7 @@ _pci_writeconfigdword:
 	mov edi, [ebp+16]
 	mov ecx, [ebp+20]
 	
-	call far [_pcibios]
+	call far [pcibios]
 
 	shr eax,8
 	pop ebx	
@@ -293,10 +293,10 @@ _pci_writeconfigdword:
 	pop ebp
 	ret
 
-global _pcibios_call
+global pcibios_call
 
 ;DWORD pcibios_call(function number)
-_pcibios_call:
+pcibios_call:
 	push ebp
 	mov ebp,esp
 	push ebx
@@ -305,7 +305,7 @@ _pcibios_call:
 	mov eax, 0x49435024
 	mov bl,0
 
-	call far [_pcibiosentry]
+	call far [pcibiosentry]
 
 	cmp al,0x80
 	je pci_error
@@ -329,13 +329,13 @@ _pcibios_call:
 
 
 
-global _invtlb
-_invtlb:
-	INVLPG [_tlb_address]
+global invtlb
+invtlb:
+	INVLPG [tlb_address]
 ret
 
-global _repinword
-_repinword:
+global repinword
+repinword:
 	push      ebp
 	mov       ebp,esp
 	push      edi
@@ -356,8 +356,8 @@ _repinword:
 	pop       ebp
 	ret 
 
-global _repindword
-_repindword:
+global repindword
+repindword:
 	push      ebp
 	mov       ebp,esp
 	push      edi
@@ -378,8 +378,8 @@ _repindword:
 	pop       ebp
 	ret 
 
-global _repoutdword
-_repoutdword:
+global repoutdword
+repoutdword:
 	push      ebp
 	mov       ebp,esp
 	push      esi
@@ -404,8 +404,8 @@ _repoutdword:
 	pop       ebp
 	ret 
 
-global _repoutword
-_repoutword:
+global repoutword
+repoutword:
 	push      ebp
 	mov       ebp,esp
 	push      esi
@@ -431,8 +431,8 @@ _repoutword:
 	ret 
 
 
-global _repoutbyte
-_repoutbyte:
+global repoutbyte
+repoutbyte:
    ;	
    ;	void repoutbyte(unsigned short int bufSeg, unsigned int bufOff,
    ;	
@@ -461,8 +461,8 @@ _repoutbyte:
 	ret 
 
 
-global _reptrans
-_reptrans:
+global reptrans
+reptrans:
    ;	
    ;	 reptrans(unsigned short int bufSeg, unsigned int bufOff,
    ;	
@@ -487,8 +487,8 @@ _reptrans:
 	ret 
 
 
-global _getcpuid
-_getcpuid:
+global getcpuid
+getcpuid:
    ;	void getcpuid(DWORD initial,DWORD *eax,DWORD *ebx,
 	push      ebp
 	mov       ebp,esp
@@ -518,8 +518,8 @@ _getcpuid:
 	ret 
 
 
-global _storeflags
-_storeflags:
+global storeflags
+storeflags:
 push      ebp
 mov       ebp,esp
 push      ecx
@@ -533,8 +533,8 @@ pop       ecx
 pop       ebp
 ret 
 
-global _restoreflags
-_restoreflags:
+global restoreflags
+restoreflags:
 push      ebp
 mov       ebp,esp
 mov	  eax,[ebp+8]
@@ -544,24 +544,24 @@ pop       ebp
 ret 
 
 
-global _loadtsr
+global loadtsr
 
 ; loadstr(WORD sel)
-_loadtsr:
+loadtsr:
        mov ax,SCHED_TSS
        ltr ax
        ret 
 
-global _switchuserprocess
+global switchuserprocess
 
-_switchuserprocess:
+switchuserprocess:
         jmp USER_TSS:0
 ret	
 
 
-global _switchprocess
+global switchprocess
 
-_switchprocess:
+switchprocess:
         jmp SYS_TSS:0
 ret	
 
@@ -592,16 +592,16 @@ mempop:
 
 
 
-global _loadregisters
+global loadregisters
 
-_loadregisters:
+loadregisters:
     lidt [idtr_x]  ;load em'
 ret
 
 
-global _offcomputer
+global offcomputer
 
-_offcomputer:
+offcomputer:
    push ebp
    mov ebp,esp
    mov edx,[ebp+8]
@@ -620,10 +620,10 @@ ret
 
 
 
-global _setpagedir
+global setpagedir
 ;setpagedir(pagedir *dir)
 
-_setpagedir:
+setpagedir:
       push ebp
       mov ebp,esp
       push eax
@@ -633,8 +633,8 @@ _setpagedir:
       pop ebp
 ret     
 
-global _refreshpages
-_refreshpages:
+global refreshpages
+refreshpages:
           
 
       mov eax,cr3
@@ -655,8 +655,8 @@ _refreshpagesA:
        sti
 ret                  
 
-global _disablepaging
-_disablepaging:
+global disablepaging
+disablepaging:
        mov eax,cr0
        and eax,0x7FFFFFFF
        mov cr0,eax
@@ -664,8 +664,8 @@ _disablepaging:
        here3:          
        ret
 
-global _enablepaging
-_enablepaging:
+global enablepaging
+enablepaging:
 
        mov        eax,0x80000011 
        mov        cr0,eax
@@ -675,13 +675,25 @@ _enablepaging:
        here2:          
 ret
 
-global _getCR0
-_getCR0:
+global enablepaging_pae
+enablepaging_pae:
+       mov        eax,cr4
+       or         eax,0x20
+       mov        cr4,eax   
+       mov        eax,0x80000011 
+       mov        cr0,eax
+       ;done, referesh the prefetch cache
+       jmp        SYS_CODE_SEL:here4
+       here4:          
+ret
+
+global getCR0
+getCR0:
   mov eax,cr0
 ret
 
-global _setCR0
-_setCR0:
+global setCR0
+setCR0:
 push ebp
 mov ebp,esp
 mov eax,[ebp+8]
@@ -689,8 +701,8 @@ mov cr0,eax
 pop ebp
 ret
 
-;global _setinterruptvector
-_setinterruptvector:
+;global setinterruptvector
+setinterruptvector:
    ;	
    ;	void  setinterruptvector(unsigned int x,idtd *t,unsigned char attr,
    ;	
@@ -783,9 +795,9 @@ xtoa:
 ;This converts an integer into a string format
 ; char *  itoa ( int val, char *buf, int radix )
 
-global _itoa
+global itoa
 
-_itoa:
+itoa:
 @10:
 	push      ebp
 	mov       ebp,esp
@@ -846,46 +858,14 @@ ultoa:
 	ret 
 
 
-global _textcolor
-
-;void textcolor(unsigned char c)
-;_textcolor:
-textcolor:
-
-   ;	
-   ;	void stextcolor(unsigned char c)
-   ;	
-	push      ebp
-	mov       ebp,esp
-	and       byte [attb],112
-	mov       al,byte [ebp+8]
-	or        byte [attb],al
-	pop       ebp
-	ret 
-global _textbackground
-;_textbackground:
-textbackground:
-   ;	
-   ;	void stextbackground(unsigned char c)
-   ;	
-	push      ebp
-	mov       ebp,esp
-	mov       eax,dword [ebp+8]
-	and       byte [attb],-113
-	shl       al,4
-	or        byte [attb],al
-	pop       ebp
-	ret 
-
-
 
 
 
 ;       move the cursor
 ;	void gotoxy(char X,char Y)
-global _gotoxy
-_gotoxy:
+global gotoxy
 gotoxy:
+
 
 @70:
 	push      ebp
@@ -937,9 +917,9 @@ POP EAX
 POP EDX 
 RET 
 
-global _move_cursor
-_move_cursor:
+global move_cursor
 move_cursor:
+
 
    ;	
    ;	void update_cursor(unsigned char row,unsigned int col)
@@ -1002,7 +982,7 @@ clrscr2:
 	push      dword 0
 	push      dword 753664
 	push      dword LINEAR_SEL
-	call      memset
+	call      _memset
 	add       esp,16
 	ret 
 
@@ -1019,7 +999,7 @@ scrollup:
 
 
 
-memset:
+_memset:
 	push      ebp
 	mov       ebp,esp
 	push      ebx

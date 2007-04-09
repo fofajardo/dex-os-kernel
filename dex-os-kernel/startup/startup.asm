@@ -18,7 +18,7 @@ MULTIBOOT_FLAGS equ 0x10006
 			   
 
 global _startup
-extern _main
+extern main
 extern _edata
 extern _end
 global _reset_gdtr
@@ -45,7 +45,7 @@ mb_header_end:
 
 multiboot:
 ;Multi boot compliant code 
-     mov [_multiboothdr], ebx   ;record the location of the multiboot information
+     mov [multiboothdr], ebx   ;record the location of the multiboot information
                                 ;structure
      mov byte [0xb8000],'.'
 
@@ -191,7 +191,7 @@ linearcode:
 
     
 call enable_A20
-call _main
+call main
 
 
 ;this procedure handles the activation of the A20 line, it uses the standard method
@@ -252,8 +252,8 @@ ret
 
 SECTION .data
 
-global _multiboothdr        
-_multiboothdr dd 0; If this was loaded by a multiboot compliant system,
+global multiboothdr        
+multiboothdr dd 0; If this was loaded by a multiboot compliant system,
                              ; this should point to the multiboot structure.
 
 gdtr:	dw 2047                	; GDT limit of 256 descriptors

@@ -21,8 +21,8 @@
 //defines the maximum number of devices that could be supported
 #define MAX_DEVICE 5
 
-#include "..\dextypes.h"
-#include "..\process\sync.h"
+#include "../dextypes.h"
+#include "../process/sync.h"
 
 typedef struct _IOrequest
  {

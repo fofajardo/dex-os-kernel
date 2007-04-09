@@ -640,6 +640,7 @@ char pause()
    unsigned int code,c;
    do
    {
+    sleep(20);        
     c=deq(&_q,&code);
    }
    while (c==-1);
@@ -664,10 +665,6 @@ int kb_ready()
 char getch()
  {
    unsigned int code,c;
-   
-  
-
-           
    do
    {
     keyboard_wait();
@@ -679,14 +676,13 @@ char getch()
    return ((char)code);
  };
 
+//waits until control of the keyboard is released by another process
 void keyboard_wait()
 {
     
    devmgr_scheduler_extension *cursched = 
         (devmgr_scheduler_extension*)extension_table[CURRENT_SCHEDULER].iface; 
-        
-
-    
+  sleep(50);    
     
   if (fg_current)  
   while ( getprocessid() != fg_getkeyboardowner())
@@ -736,10 +732,10 @@ void kb_pause()
 int c,code;
 //empty keyboard buffer
 keyboardflush();
-
 //wait until a key is pressed
 do
  {
+          sleep(20);   
           c=deq(&_q,&code);
  }
 while (c==-1);
@@ -751,7 +747,11 @@ int kb_getchar()
 {
 int c,code;
 c=deq(&_q,&code);
-if (c==-1) return -1;
+if (c==-1) 
+{
+  sleep(20);         
+  return -1;
+};
 return code;
 };
 

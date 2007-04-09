@@ -176,12 +176,17 @@ int vfs_directwrite(char *buf, int itemsize, int n, file_PCB* fhandle)
             if (start+size>=fhandle->ptr->size)
             {
                 //compute if additional sectors are necessary
-                DWORD totalblocks, neededblocks;
+                DWORD totalblocks, neededblocks,block_ratio;
                 
                 //determine the smallest allocation unit that this filesystem supports
                 //and check if we need more blocks
                 bytes_per_allocation_unit = bridges_call(fs, &fs->getbytesperblock, fhandle->ptr->memid);
+				block_ratio = fhandle->ptr->size/bytes_per_allocation_unit;
+				
+				if (block_ratio == 1) totalblocks = 1;
+					else
                 totalblocks=fhandle->ptr->size/bytes_per_allocation_unit+1;
+					
                 neededblocks=(start+size)/bytes_per_allocation_unit+1;
 
                 if (fhandle->ptr->size==0)
@@ -610,7 +615,9 @@ int vfs_mount_device(const char *fsname,const char *devname,const char *location
         //Make sure that the device has not already been mounted...
         if (devmgr_getlock(devid)) return -1;
 
-
+    #ifdef DEBUG_VFS_VIRTUAL
+    printf("VFS mount\n");
+    #endif
         //obtain the vfs_node for the mountpoint
         if (location==0)
             return -1;
@@ -627,6 +634,9 @@ int vfs_mount_device(const char *fsname,const char *devname,const char *location
         
         mount_location->attb|= FILE_MOUNT;
         
+            #ifdef DEBUG_VFS_VIRTUAL
+    printf("VFS lock\n");
+    #endif
         //lock the device to prevent it from being mounted again
         devmgr_setlock(devid,1);
 
@@ -651,42 +661,14 @@ int vfs_mount_device(const char *fsname,const char *devname,const char *location
     return -1;
 };
 
-//opens a file, supports file locking if opened for writing,append
-file_PCB *openfilex(char *filename,int mode)
-{
+//VFS openfile based on VFS node information
+file_PCB *vfs_openfile(vfs_node *node,int mode) {
     DWORD sectsize,flag;
-    int fs_device;
+
     file_PCB *fcb;
     
-    vfs_node *ptr=vfs_searchname(filename);
-
-#ifdef DEBUG_VFSREAD
-    printf("openfilex %s called\n",filename);
-#endif
-
-    if (ptr!=0)
-    {
-        fs_device = ptr->fsid;
-        if (fs_device==-1) return 0;
-    };
-
-    if (ptr == 0 && (mode == FILE_READWRITE || mode == FILE_WRITE || mode == FILE_APPEND) ) 
-        ptr=createfile(filename,0);
-    else
-    if (ptr!=0 && (mode == FILE_WRITE) && !ptr->locked && !ptr->opened)
-        {
-            devmgr_fs_desc *fs; 
-            fs=(devmgr_fs_desc*)devmgr_devlist[fs_device];
-            
-            //make sure the filesystem supports this command           
-            if (fs->rewritefile!=0)
-                        bridges_call(fs,&fs->rewritefile,ptr,ptr->memid);
-            else
-                        return 0;
-        };
-
     //check for file locking    
-    if ( (ptr==0) || (ptr->locked) || (mode!=FILE_READ && ptr->opened))
+    if ( (node==0) || (node->locked) || (mode!=FILE_READ && node->opened))
     {
 #ifdef WRITE_DEBUG
         printf("openfilex failed.\n");
@@ -694,7 +676,7 @@ file_PCB *openfilex(char *filename,int mode)
         return 0;
     };   
 
-    ptr->opened++;
+    node->opened++;
 
 
 
@@ -722,7 +704,7 @@ file_PCB *openfilex(char *filename,int mode)
 
     if (mode==FILE_WRITE) /*write mode active?? lock the file*/
     {
-        ptr->locked=1;
+        node->locked=1;
         fcb->locked=1;
     };
 
@@ -732,11 +714,11 @@ file_PCB *openfilex(char *filename,int mode)
 
     fcb->processid=current_process->processid;
     fcb->mode=mode;
-    fcb->ptr=ptr;
+    fcb->ptr=node;
 
     /*intialize the file pointers ( the pointers used for fread to determine
                                      the position in the file)*/
-    if (mode==FILE_APPEND) fcb->ptrlow=ptr->size;
+    if (mode==FILE_APPEND) fcb->ptrlow=node->size;
     else
         fcb->ptrlow=0;
     fcb->ptrhigh=0;
@@ -748,6 +730,33 @@ file_PCB *openfilex(char *filename,int mode)
 
     //printf("openfile(%s) called handle value %d\n",filename,file_nextptr);
     return fcb;
+}
+
+//opens a file, supports file locking if opened for writing,append
+file_PCB *openfilex(char *filename,int mode)
+{
+    int fs_device;
+    vfs_node *ptr=vfs_searchname(filename);
+
+#ifdef DEBUG_VFSREAD
+    printf("openfilex %s called\n",filename);
+#endif
+    if (ptr == 0 && (ptr == FILE_READWRITE || mode == FILE_WRITE || mode == FILE_APPEND) ) 
+        ptr=createfile(filename,0);
+    else
+    if (ptr!=0 && (mode == FILE_WRITE) && !ptr->locked && !ptr->opened)
+    {
+            devmgr_fs_desc *fs; 
+            fs=(devmgr_fs_desc*)devmgr_devlist[fs_device];
+            
+            //make sure the filesystem supports this command           
+            if (fs->rewritefile!=0)
+                        bridges_call(fs,&fs->rewritefile,ptr,ptr->memid);
+            else
+                        return 0;
+    };
+    
+ return vfs_openfile(ptr,mode);
 };
 
 /* ==================================================================
@@ -1076,6 +1085,7 @@ int fgetsectors(file_PCB* fhandle)
     return 0;
 };
 
+
 /* Copies a file from one location to another, if a file with the same
 name already exists in the destination, fcopy will return an error*/
 int fcopy(char *source, char *dest)
@@ -1100,7 +1110,7 @@ int fcopy(char *source, char *dest)
     {
         if (destfile->attb&FILE_DIRECTORY)
         {
-            char newdest[255];
+            char newdest[500];
             srcfile = vfs_searchname(source);
             getfullpath(destfile,newdest);
             strcat(newdest,srcfile->name);
@@ -1110,9 +1120,8 @@ int fcopy(char *source, char *dest)
         }
         else
         { 
-            //file already exists!!!    
-            fclose(desthandle); 
-            return -1;
+        desthandle=openfilex(dest,FILE_WRITE); 
+        if (desthandle == 0) return -1;
         };
     }
     else
@@ -1156,6 +1165,7 @@ int fcopy(char *source, char *dest)
     return 1;
 };
 
+
 //Delete a vfs_node from a singly-linked list structure
 int vfs_removenode(vfs_node *node)
 {
@@ -1198,7 +1208,6 @@ int vfs_deletefile(vfs_node *ptr)
     int fs_deviceid=0, ret;
     
     if (ptr->locked) return -1; //file is open, cannot delete
-    if (!vfs_removenode(ptr)) return -1;
 
     //Determine device ID of the filesystem to use
     fs_deviceid = ptr->fsid;
@@ -1212,10 +1221,25 @@ int vfs_deletefile(vfs_node *ptr)
         ret = bridges_call(fs, &fs->deletefile, ptr, ptr->memid);
     else
         ret = -1;
-        
-    free(ptr);        
+	
+    if (ret!=-1) {
+		//detach from vfs node
+    	if (!vfs_removenode(ptr)) return -1;		
+		if (ptr->attb&FILE_LINK) free(ptr->link_ptrstr);
+		free(ptr);        
+	}
+	
     return ret;    
 };
+
+//closes and deletes a file based on it's name
+int vfs_removefile(const char *name) {
+	vfs_node *node = vfs_searchname_lk(name,0);
+	if (node!=-1) {
+		return vfs_deletefile(node);
+	}
+	return -1;
+}
 
 //closes and deletes a file based on a handle
 int fdelete(file_PCB *fhandle)
@@ -1338,6 +1362,10 @@ void findfile(char *name)
     };
 };
 
+/*
+Creates a virtual directory, a virtual directory is a directory that only exists
+in memory. Virtual directories are useful for mountpoints.
+*/
 vfs_node *mkvirtualdir(char *name,int fsid,int deviceid)
 {
     vfs_node *destdir; //obtain the destination directory
@@ -1346,7 +1374,11 @@ vfs_node *mkvirtualdir(char *name,int fsid,int deviceid)
     fatdirentry *dirs, *dirlocation;
     devmgr_fs_desc *fs;
     char path[255],dirname[255],fname[255];
-
+    
+    #ifdef DEBUG_VFS_VIRTUAL
+    printf("mkvirtualdir called\n");
+    #endif
+    
     //Determine the directory vfs node to place the new diretory
     node=vfs_searchname(name);
 
@@ -1385,6 +1417,10 @@ vfs_node *mkvirtualdir(char *name,int fsid,int deviceid)
     node->attb = FILE_DIRECTORY;
     node->fsid = fsid;
     node->memid = deviceid;
+    
+    #ifdef DEBUG_VFS_VIRTUAL
+    printf("mkvirtualdir end\n");
+    #endif
     return node;
 };
 
@@ -1507,7 +1543,113 @@ int vfs_isvalidname(const char *name)
     return 1;
 };
 
-//Creaates a file, this function is automatically called by openfilex
+//Removes a VFS link
+int vfs_removelink(const char *link_name) {
+    vfs_node *node = vfs_searchname_lk(link_name,0);
+    if (node->attb&FILE_LINK) {
+    	return vfs_deletefile(node);
+    };
+    return -1; //not a link
+}
+
+//Creates a VFS link
+vfs_node *vfs_createlink(const char *link_name,const char *forward_name) {
+	vfs_node *destdir,*rollback,*node,*retval; //obtain the destination directory
+	devmgr_fs_desc *fs;
+    int fs_deviceid = 0,result;
+    char path[255],dirname[255],fname[255],forward_full_name[500];
+	//wait until the vfs is ready
+    sync_entercrit(&vfs_busy);
+	//determine if the file already exists
+    node=vfs_searchname(link_name);
+
+    //file already exists!!
+    if (node!=0) return -1;
+		
+	//obtain the filename from the path given in name
+    strcpy(path,link_name);
+    parsedir(path,dirname,fname);
+	
+	//verify that this is a valid filename
+    if (!vfs_isvalidname(fname)) return -1;
+		
+	//obtain the vfs_node of the parent directory
+    destdir=vfs_searchname(dirname);
+
+    if (destdir==0) {
+
+        printf("error locating directory!\n");
+        sync_leavecrit(&vfs_busy);
+        return -1;
+    }; //directory or folder not found!
+	
+	//create a new vfs_node
+    node = (vfs_node*)malloc(sizeof(vfs_node));
+	
+	//Initialize the node structure
+    memset(node,0,sizeof(vfs_node));
+	
+	//Save the old value of the parent directory's files pointer so
+    //that we could rollback in case something unfortunate happens
+    rollback = destdir->files;
+	
+	  //use the FS driver of the parent
+    fs_deviceid = destdir->fsid;
+    if (fs_deviceid==-1) return -1;
+
+    //attach the node to the parent directory
+    vfs_createnode(node,destdir);
+
+    //fill in the required fields in vfs_node
+    strcpy(node->name,fname);
+	
+	//Set up link specific fields
+	vfs_node *forward_node=vfs_searchname(forward_name);
+	if (forward_node!=-1) {
+		getfullpath(forward_node,forward_full_name);
+		node->link_ptrstr=(char*)malloc(strlen(forward_full_name)+1);
+		strcpy(node->link_ptrstr,forward_full_name);
+		node->fsid  = fs_deviceid;
+		node->attb = node->attb | FILE_LINK;
+			
+		//Persist the link to the storage device
+    		//use the block driver of the parent
+    		node->memid = destdir->memid;
+		
+    		//Obtain an interface for the fs driver
+    		fs=(devmgr_fs_desc*)devmgr_getdevice(fs_deviceid);
+	
+  		//tell the fs driver to create file on disk
+    		if (fs->createlink!=0) {
+    			result = bridges_call(fs,&fs->createlink,node,node->memid);
+    			file_PCB *handle = vfs_openfile(node,FILE_READ | FILE_WRITE);
+    			vfs_directwrite("#!link=",7,1,handle);
+    			result = vfs_directwrite(node->link_ptrstr,strlen(forward_full_name)+1,1,handle);
+    			fclose(handle);
+    		}
+	} else {
+	result = -1;
+	}
+    if (fs->createlink == 0 || result == -1)
+    {
+        //create file unsuccessful, rollback to previous state
+	free(node->link_ptrstr);
+        free(node);
+        destdir->files = rollback;
+        retval = -1;
+    }
+        else
+    retval = node;
+        
+    sync_leavecrit(&vfs_busy);
+	          
+#ifdef WRITE_DEBUG
+    printf("createfile done.\n");
+#endif
+    return retval;
+}
+
+//Creates a file, this function is automatically called by openfilex
 //if the mode is FILE_WRITE and no file exists
 vfs_node *createfile(const char *name,DWORD attb)
 {
@@ -1604,7 +1746,7 @@ vfs_node *createfile(const char *name,DWORD attb)
 #endif
 
     return retval;
-    ;
+    
 };
 
 //returns the directory where the file resides
@@ -1654,12 +1796,8 @@ int vfs_mountdirectory(vfs_node *node)
         return 0; 
 };
 
-/* searches a file for the given name and then returns
-   a vfs_node pointer */
-   
-vfs_node *vfs_searchname(const char *name)
-{
-    char path[256];
+vfs_node *vfs_searchname_lk(const char *name,int uselink) {
+char path[256];
     char *s;
     vfs_node *node_ptr = vfs_root->files;
 
@@ -1730,8 +1868,17 @@ vfs_node *vfs_searchname(const char *name)
         {
             s=strtok(0,"/");
 
-            if (s==0) //we have found the file!
+            if (s==0) {
+				//Check if this a link
+				if (node_ptr->attb&FILE_LINK && uselink) {
+					char *linkstr = (char*)node_ptr->link_ptrstr;
+					if (linkstr!=0) {
+						return vfs_searchname(linkstr);
+					}
+				}
+				//we have found the file!
                 return node_ptr;
+			}
                 
             //a directory?    
             if ( (node_ptr->attb&FILE_DIRECTORY) 
@@ -1759,11 +1906,93 @@ vfs_node *vfs_searchname(const char *name)
     } 
     while (node_ptr != 0);
     return 0;
+}
+
+/* searches a file for the given name and then returns
+   a vfs_node pointer */
+   
+vfs_node *vfs_searchname(const char *name)
+{
+    return vfs_searchname_lk(name,1);
 };
 
-
-
-
+/*
+Moves a file from one place to another
+*/
+vfs_node *vfs_movefile(const char *source,const char *dest) {
+	//source must be existing
+	vfs_node *srcfile = vfs_searchname_lk(source,0);
+	vfs_node *destfile = vfs_searchname_lk(dest,0);
+	
+	//prevent from moving to itself
+	if (srcfile!=destfile) {
+	
+	if (srcfile!=-1) {
+		//case 1: source and destination both exist and are at the same media
+		int usefcopy = 0;
+		if (destfile!=-1 && (srcfile->memid == destfile->memid) ) {
+			//case 1.1: destination is a directory
+			if (destfile->attb&FILE_DIRECTORY&&!usefcopy) {
+				
+				char s[500];
+				//determine if a file with the same name already exists in target location
+				getfullpath(source,s);
+				strcat(s,srcfile->name);
+				printf("checking if %s exists...\n");
+				vfs_node *destnode= vfs_searchname_lk(s,0);
+				//If destination exists, attempt to remove it.
+				
+				devmgr_fs_desc* fs =(devmgr_fs_desc*)devmgr_getdevice(srcfile->fsid);
+  				if (fs->movefile==0) usefcopy = 1; //if movefile is not supported, fall back to fcopy
+  				
+   				if (!usefcopy) {
+					if (destnode!=-1) {
+						//Prevent from copying to self
+						if (destnode==srcfile) return -1;
+						vfs_deletefile(destnode);
+					}
+					//Perform move on the device
+					bridges_link(fs,&fs->movefile,srcfile,destfile,0,0,0,0);   
+					//simply reassign the nodes parent
+					vfs_removenode(srcfile);
+					vfs_createnode(srcfile,destfile);
+					return srcfile;
+				}
+				
+			} else
+			//case 1.2: destination is a file
+			if (!destfile->attb&FILE_DIRECTORY&&!usefcopy) {
+				devmgr_fs_desc* fs =(devmgr_fs_desc*)devmgr_getdevice(srcfile->fsid);
+  				if (fs->movefile==0) usefcopy = 1; //if movefile is not supported, fall back to fcopy
+  				if (!usefcopy) {
+  				
+	  				vfs_node *parent = destfile->path;
+	  				strcpy(srcfile->name,destfile->name);
+					vfs_deletefile(destfile);
+					//Perform move on the device
+					bridges_link(fs,&fs->movefile,srcfile,destfile,0,0,0,0);   
+					//simply reassign the nodes parent
+					vfs_removenode(srcfile);
+					vfs_createnode(srcfile,parent);
+					return srcfile;
+				}
+			}
+	} else 
+	//case 2.0: Moving from one device to another
+	//For different devices, we have to perform a full copy
+	usefcopy = 1;
+	
+		if (usefcopy) {
+			if (fcopy(source,dest)!=-1) {
+				vfs_deletefile(srcfile);
+				return srcfile;
+			} else
+			return -1;
+		}
+	}
+	}
+		return -1;
+}
 
 vfs_node *getdirectory(const char *name)
 {
@@ -1922,6 +2151,3 @@ void file_showopenfiles()
         ;
     };
 };
-
-
-

@@ -29,11 +29,15 @@
 #ifndef VFS_CORE_H
 #define VFS_CORE_H
 
-#include "..\dextypes.h"
-#include "..\stdlib\time.h"
-#include "..\process\sync.h"
+#define DEBUG_VFS_VIRTUAL
+#define DEBUG_MOUNT
+
+#include "../dextypes.h"
+#include "../stdlib/time.h"
+#include "../process/sync.h"
 
 //defines constants for the attribute bits - (influenced by UNIX)
+#define FILE_LINK	0x400
 #define FILE_DIRECTORY  0x200
 #define FILE_IEXE       0x100
 #define FILE_IREAD      0010000000b
@@ -93,7 +97,7 @@ typedef struct _file {
  DWORD fsid,memid; //the deviceid for the filesystem driver and the data device respectively
  struct _file *path; //points back to the parent directory
  DWORD size;
-
+ int owner_handle; //the handle id for the owner of thie file
  dex32_datetime date_created;  //A date-time stamp which indicates creation date
  dex32_datetime date_modified; //A date-time stamp which indicates modification date
  DWORD locked;                 //prevents the file from being deleted, written to etc.
@@ -102,7 +106,7 @@ typedef struct _file {
  struct _file *prev,*next;  //if a file, points to the previous and next file
                       //in the current directory
  struct _file *files; //for directories only
-
+ 
  /***************** Filesystem dependent structures. the DEX VFS does not
   really care about this, but it automatically frees the data structures during unmount
   in misc and misc2 if miscsize or miscsize2 is nonzero */
@@ -119,7 +123,7 @@ typedef struct _file {
                 
  int misc_flag; //may be used by the filesystem for its own purposes, the VFS does not
                 //even touch this element
-                
+ char *link_ptrstr; //If this node is a link, this points to the name of the target file               
  DWORD miscsize, miscsize2; //the size of the structure pointed to by misc
 
 } vfs_node;
@@ -201,6 +205,7 @@ int     closeallfiles(DWORD pid);
 vfs_node *createfile(const char *name,DWORD attb);
 void    create_filesystem();
 int     fclose(file_PCB *fhandle);
+int     fcopy(char *source, char *dest);
 int     fdelete(file_PCB *fhandle);
 int     feof(file_PCB* fhandle);
 int     fflush(file_PCB* fhandle);
@@ -225,14 +230,21 @@ char    *rev_str(char *str);
 char    *showpath(char *s);
 void    swapchar(char *t1,char *t2);
 vfs_node *vfs_checkopenfiles(vfs_node *ptr);
+vfs_node *vfs_createlink(const char *link_name,const char *forward_name);
 void    vfs_createnode(vfs_node *node, vfs_node *parent);
 int     vfs_deletefile(vfs_node *ptr);
 int     vfs_freedirectory(vfs_node *ptr);
 vfs_node *mkvirtualdir(char *name,int fsid,int deviceid);
 int     vfs_mountdirectory(vfs_node *node);
 int     vfs_mount_device(const char *fsname,const char *devname,const char *location);
+vfs_node *vfs_movefile(const char *source,const char *dest);
+file_PCB *vfs_openfile(vfs_node *node,int mode);
 char    *vfs_readline(char *s,int n,const char term, file_PCB *fhandle);
+int 	vfs_removefile(const char *name);
+int vfs_removelink(const char *link_name);
+int vfs_removenode(vfs_node *node);
 vfs_node *vfs_searchname(const char *name);
+vfs_node *vfs_searchname_lk(const char *name,int uselink);
 vfs_node *searchname(const char *name,int);
 int vfs_unmount(vfs_node *node);
 int     vfs_unmount_device(const char *location);

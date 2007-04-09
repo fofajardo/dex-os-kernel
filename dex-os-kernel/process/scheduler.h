@@ -24,7 +24,7 @@ Description: This module is the default round-robin scheduler that is
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include "..\devmgr\dex32_devmgr.h"
+#include "../devmgr/dex32_devmgr.h"
 
 extern PCB386 *sched_phead;
 extern int ps_schedid;

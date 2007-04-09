@@ -1055,7 +1055,7 @@ void ps_switchto(PCB386 *process)
     //set the state of the floating point unit from the PCB of the
     //process to switch to
     memcpy(&ps_fpustate,&process->regs2,sizeof(FPUregs));
-    asm volatile ("frstor _ps_fpustate");
+    asm volatile ("frstor ps_fpustate");
 
     //switch to a user process
     if (process->accesslevel==ACCESS_USER)
@@ -1073,7 +1073,7 @@ void ps_switchto(PCB386 *process)
     };
 
     //save the state of the floating point unit
-    asm volatile ("fnsave _ps_fpustate");
+    asm volatile ("fnsave ps_fpustate");
     memcpy(&process->regs2,&ps_fpustate,sizeof(FPUregs));
 };
 
@@ -1376,7 +1376,7 @@ void process_init()
     
     //initialize the FPU
     asm volatile ("fninit");
-    asm volatile ("fnsave _ps_kernelfpustate");
+    asm volatile ("fnsave ps_kernelfpustate");
     
     //add the first process in memory which is the process kernel
     kernel=&sPCB;
@@ -1514,4 +1514,3 @@ void process_init()
     
     printf("starting process manager...\n");
 };
-

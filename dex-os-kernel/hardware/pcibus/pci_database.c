@@ -10,6 +10,7 @@ pci_vendor	pci_vendors[] =
 
 pci_device	pci_devices[] =
 {
+	{ 0x2444,0x8086,"USB Controller","USB-B"},           
 	{ 0x0,0x0,"Unknown","Unknown"}
 } ;
 

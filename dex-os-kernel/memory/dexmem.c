@@ -274,17 +274,20 @@ DWORD xmaplineartophysical(const DWORD linearmemory,const DWORD physicalmemory,
     return 0;
     };
 
-int ints_enabled=1;
+
 
 void dex32_stopints(DWORD *flags)
  {
    storeflags(flags);
+   ints_enabled=0;
    stopints();
+   ints_enabled=0;
  ;};
 
 void dex32_restoreints(DWORD flags)
  {
    restoreflags(flags);
+   ints_enabled=1;
  ;};
 
 

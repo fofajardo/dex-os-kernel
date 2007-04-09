@@ -309,7 +309,7 @@ if (fhdr->f_magic==I386MAGIC)
                         {
                         	if (relocation[i2].r_type==RELOC_ADDR32)
                         	{
-					DWORD *loc=symbols[relocation[i2].r_symndx].e_value;
+								DWORD *loc=symbols[relocation[i2].r_symndx].e_value;
                                         printf("dex32_coff_loader: ABSOLUTE RELOCATION Detected\n");
                         	}
                         	else

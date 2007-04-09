@@ -25,6 +25,9 @@ int java_loadusermodule(
            printf("java class has been detected. execute not yet supported.\n");
            printf("major version: %d\n", major_version);
            printf("minor version: %d\n", minor_version);
+           //a linked list used to keep track of the virtual addresses used
+           //by this process so that it could be freed when the process
+           //terminates
            return 0;
         }
         return 0;

@@ -4,10 +4,15 @@
 //This currently implements a very simple first-come-first-served IO queue
 //**************************************************************************
 
-#include "..\devmgr\dex32_devmgr.h"
+#include "../devmgr/dex32_devmgr.h"
 #include "iosched.h"
-#include "..\stdlib\time.h"
+#include "../stdlib/time.h"
+#include "../perfmon/perf.h"
 
+#define USE_BENCHMARK
+//#define DEBUG_READ
+//#define DEBUG_IOREADWRITE2
+//#define DEBUG_IOREADWRITE
 //The registers that the io scheduler uses
 int IOmgr_pause=0;
 int IOrequest_time = 0;
@@ -20,6 +25,9 @@ IOrequest *cur;
 int io_flushid = 0;
 int flushing=0,flushok=1;
 
+//performance monitor handles
+int perf_monwrite=0,perf_monread=0;
+
 sync_sharedvar IOrequest_busy;
 
 //initializes all the data structures needed in this module
@@ -30,10 +38,10 @@ DWORD iomgr_init()
    IOjob=0;
    cur=0;
    memset(&IOrequest_busy,0,sizeof(sync_sharedvar));
-   
-   
+
    strcpy(iomgr.hdr.name,"default_iomgr");
    strcpy(iomgr.hdr.description,"DEX default I/O scheduler and manager");
+   strcpy(IOrequest_busy.owner,iomgr.hdr.name);
    iomgr.hdr.type = DEVMGR_IOMGR;
    iomgr.hdr.size = sizeof(devmgr_iomgr);
    iomgr.init = iomgr_init;
@@ -41,6 +49,11 @@ DWORD iomgr_init()
    iomgr.close = dex32_closeIO;
    iomgr.request = dex32_requestIO;
    devmgr_register((devmgr_generic*)&iomgr);
+	 
+	//Setup performance monitoring
+	perf_monwrite = perf_new_entity("iomgr_writes");
+	perf_monread = perf_new_entity("iomgr_reads");	 
+
  };
 
 DWORD iomgr_flushmgr()
@@ -67,7 +80,18 @@ DWORD iomgr_diskmgr()
     {
       ptr=IOmgr_obtainjob(0,0,lastjob);
       
-      while (IOmgr_pause);
+      while (IOmgr_pause) {
+		            #ifdef DEBUG_IOREADWRITE
+                    char *scrptr = (char*)0xB8000;
+	  				if (*scrptr=='*') *scrptr='+';
+						 else
+				    if (*scrptr=='+') *scrptr='=';
+                         else						
+					if (*scrptr=='=') *scrptr='?';
+						else
+					*scrptr='*';	
+                    #endif
+	  };
       
       if (ptr==0){
 		//Commit writes to the disk if a specified time interval has
@@ -86,16 +110,23 @@ DWORD iomgr_diskmgr()
 
       if (ptr!=0)
       {
+		  #ifdef DEBUG_IOREADWRITE
+		  printf("dex32_diskmgr: Job obtained. Processing...\n");
+		  #endif
          sync_entercrit(&IOrequest_busy);   
          /*Turn of task switching to improve performance*/
-         disable_taskswitching();
+         //disable_taskswitching();
          
          do {
-      //read or write data to the disk
-      //   sigwait=current_process->processid;
-      if (ptr->type==IO_READ)
-         {
-
+            //read or write data to the disk
+            //   sigwait=current_process->processid;
+            if (ptr->type==IO_READ)
+              {
+				  
+				 #ifdef USE_BENCHMARK
+				 int pstart = time();
+				 #endif
+				  
                  #ifdef DEBUG_READ
                  printf("dex32_diskmgr: Reading block %d..\n",ptr->lowblock);
                  #endif		
@@ -108,7 +139,7 @@ DWORD iomgr_diskmgr()
                  printf("IO ERROR: Device %d is not a block device!\n",ptr->deviceid);
                  }
                        else
-              { 
+                 { 
                  #ifdef DEBUG_READ         
                  printf("reading %d blocks starting at %d to location 0x%x.\n",
                            ptr->num_of_blocks, ptr->lowblock,ptr->buf);
@@ -132,15 +163,20 @@ DWORD iomgr_diskmgr()
           	    #endif
           	    
 	          };	    
-                           
+              	 #ifdef USE_BENCHMARK
+				 int pstop = time();
+			     perf_record(perf_monwrite,pstop-pstart);
+				 #endif             
 	        }
-      	            else
+      	        else
             if (ptr->type==IO_WRITE)
             {
             	    #ifdef DEBUG_IOREADWRITE
             	    printf("dex32_diskmgr: Writing block %d to device %d\n",ptr->lowblock,ptr->deviceid);
             	    #endif
-	                    
+	             	#ifdef USE_BENCHMARK
+				 	int pstart = time();
+				 	#endif    
 	                //obtain the device descriptor       
 	                myblock = (devmgr_block_desc*)devmgr_devlist[ptr->deviceid];
 	                
@@ -167,18 +203,29 @@ DWORD iomgr_diskmgr()
                     #ifdef DEBUG_IOREADWRITE
                     printf("dex32_diskmgr: write block Done..\n");
                     #endif
-                ;}
+					#ifdef USE_BENCHMARK
+				 	int pstop = time();
+					perf_record(perf_monread,pstop-pstart);
+				 	#endif    
+                }
                 ptr= IOmgr_obtainjob(0,0,lastjob);
 
            }
-           
-          while ( ptr!=0);    
-
-          enable_taskswitching(); /*Turn on task switiching*/
+          while (ptr!=0);    
           sync_leavecrit(&IOrequest_busy);
+          //enable_taskswitching(); /*Turn on task switiching*/
       };
       
-
+                    #ifdef DEBUG_IOREADWRITE
+                    char *scrptr = (char*)0xB8000;
+	  				if (*scrptr=='|') *scrptr='/';
+						 else
+				    if (*scrptr=='/') *scrptr='-';
+                         else						
+					if (*scrptr=='-') *scrptr='\\';
+						else
+					*scrptr='|';	
+                    #endif
     } while (1);
 
 ;};
@@ -189,7 +236,9 @@ IOrequest *IOmgr_obtainjob(int deviceid,
  {
   IOrequest *ptr,*tmp,*handlecand;
   DWORD mindist=0xFFFFFFFF;
-
+                    #ifdef DEBUG_IOREADWRITE
+                    printf("dex32_diskmgr: obtaining job\n");
+                    #endif
   //Wait until the IO manager is ready
   sync_entercrit(&IOrequest_busy);
   
@@ -239,11 +288,15 @@ int dex32_IOcomplete(DWORD handle)
   {
   int retval;
   IOrequest *ptr;
-
+                    #ifdef DEBUG_IOREADWRITE
+                    //printf("IOcomplete enter.\n");
+                    #endif
   //wait until the I/O manager is ready
   sync_entercrit(&IOrequest_busy);
   
- 
+                     #ifdef DEBUG_IOREADWRITE
+                    //printf("IOcomplete check handle.\n");
+                    #endif
   
   ptr=(IOrequest*)handle;
 
@@ -252,9 +305,9 @@ int dex32_IOcomplete(DWORD handle)
   if (ptr->status==IO_ERROR) retval=-1;
      else
   if (ptr->status==IO_PENDING) retval=0;
-//     else //ptr->status was given an unknown value, this is impossible
+    else //ptr->status was given an unknown value, this is impossible
           //unless a process overwrites the IOrequest data structure
-//  printf("iomgr() data structure protection error\n");
+     printf("iomgr() data structure protection error\n");
   sync_leavecrit(&IOrequest_busy);
   
   return retval;
@@ -280,15 +333,19 @@ DWORD dex32_requestIO(int deviceid,int type,DWORD block,DWORD numblocks, void *b
      devmgr_block_desc *myblock = (devmgr_block_desc*) devmgr_getdevice(deviceid);
      DWORD flags;
      //wait until the I/O manager is ready
-     
+     //printf("blcok %d request to addr %x",block,buf);
+                 #ifdef DEBUG_READ
+                 printf("dex32_diskmgr: read request to %d posted.\n",block);
+                 #endif		
      sync_entercrit(&IOrequest_busy);
-     storeflags(&flags);
-     stopints();
+     //storeflags(&flags);
+     //stopints();
      #ifdef DEBUG_IOREADWRITE2
      printf("R(");
      #endif
+	 devmgr_setcontext(deviceid);
      if (myblock->getcache!=0)
-     if (type==IO_READ&&myblock->getcache(buf,block,numblocks))            
+     if (type==IO_READ&&myblock->getcache(buf,block,numblocks))
       {
         ptr=(IOrequest*)malloc(sizeof(IOrequest));
         ptr->rID=(DWORD)ptr;
@@ -302,13 +359,13 @@ DWORD dex32_requestIO(int deviceid,int type,DWORD block,DWORD numblocks, void *b
         #ifdef DEBUG_IOREADWRITE2
         printf(")r\n");
         #endif
-        restoreflags(flags);
+        //restoreflags(flags);
         sync_leavecrit(&IOrequest_busy);
         return (DWORD)ptr->rID;
       };
       
       if (myblock->putcache!=0)
-      if (type==IO_WRITE&&myblock->putcache(buf,block,numblocks))
+      if (type==IO_WRITE&& myblock->putcache(buf,block,numblocks))
       {
         ptr=(IOrequest*)malloc(sizeof(IOrequest));
         ptr->rID=(DWORD)ptr;
@@ -322,7 +379,7 @@ DWORD dex32_requestIO(int deviceid,int type,DWORD block,DWORD numblocks, void *b
         #ifdef DEBUG_IOREADWRITE2
         printf(")r\n");
         #endif
-        restoreflags(flags);
+        //restoreflags(flags);
         sync_leavecrit(&IOrequest_busy);
         return (DWORD)ptr->rID;
       };
@@ -354,9 +411,8 @@ DWORD dex32_requestIO(int deviceid,int type,DWORD block,DWORD numblocks, void *b
       #ifdef DEBUG_IOREADWRITE2
       printf(")r\n");
       #endif
-      restoreflags(flags);      
+      //restoreflags(flags);      
       sync_leavecrit(&IOrequest_busy);
 
       return (DWORD)ptr->rID;
 ;};
-

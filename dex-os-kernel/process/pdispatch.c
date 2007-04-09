@@ -174,6 +174,8 @@ void process_dispatcher()
                  
                  pd_head=pd_head->next;
                 
+                } else {
+                  sleep(20);
                 };
                 
                 if (getmessage(&sender,&message,&data)!=0)
